@@ -1,0 +1,28 @@
+{
+  "name": "myapp",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.ts",
+  "scripts": {
+    "watch": "tsc -p . -w",
+    "dev": "tsc -p . && npm link"
+  },
+  "bin": {
+    "myapp": "./dist/index.js"
+  },
+  "author": "@vrdmn",
+  "license": "ISC",
+  "devDependencies": {
+    "@types/commander": "^2.9.1",
+    "@types/node-fetch": "^1.6.7",
+    "tslint": "^5.6.0",
+    "typescript": "^2.4.2"
+  },
+  "dependencies": {
+    "commander": "^2.11.0",
+    "electron": "^1.7.5",
+    "node-fetch": "^1.7.2",
+    "node-pnp-js": "^0.1.0",
+    "sp-pnp-js": "^2.0.8"
+  }
+}
