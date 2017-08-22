@@ -5,7 +5,8 @@
   "main": "index.ts",
   "scripts": {
     "watch": "tsc -p . -w",
-    "dev": "tsc -p . && npm link"
+    "prod": "tsc -p . && npm link",
+    "dev": "tsc -p ."
   },
   "bin": {
     "myapp": "./dist/index.js"
@@ -21,8 +22,7 @@
   "dependencies": {
     "commander": "^2.11.0",
     "electron": "^1.7.5",
-    "node-fetch": "^1.7.2",
-    "node-pnp-js": "^0.1.0",
-    "sp-pnp-js": "^2.0.8"
+    "node-sp-auth": "^2.1.1",
+    "request-promise": "^4.2.1"
   }
 }
