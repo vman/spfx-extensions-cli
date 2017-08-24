@@ -38,19 +38,20 @@ if (program.sitecollection) {
 if (program.list) {
     displayExtentions("web/lists/GetByTitle('" + program.list + "')");
 }
-function displayExtentions(path) {
+function displayExtentions(scope) {
     if (!prefs.siteUrl) {
         console.error('Please use --connect <siteurl');
     }
     request.get({
-        url: prefs.siteUrl + "/_api/" + path + "/UserCustomActions?$filter=startswith(Location, 'ClientSideExtension')\n    &$select=ClientSideComponentId,Title,Location,ClientSideComponentProperties",
+        url: prefs.siteUrl + "/_api/" + scope + "/UserCustomActions?$filter=startswith(Location, 'ClientSideExtension')\n    &$select=ClientSideComponentId,Title,Location,ClientSideComponentProperties",
         headers: prefs.authHeaders
     }).then(function (response) {
         var userCustomActions = JSON.parse(response).value;
+        console.log(colors.magenta(scope + " level spfx extentions at " + prefs.siteUrl + ":"));
         console.log(colors.yellow('Title, ClientSideComponentId, Location, ClientSideComponentProperties'));
         for (var _i = 0, userCustomActions_1 = userCustomActions; _i < userCustomActions_1.length; _i++) {
             var uca = userCustomActions_1[_i];
-            console.log(colors.green(uca.Title, uca.ClientSideComponentId, uca.Location, uca.ClientSideComponentProperties));
+            console.log(colors.green([uca.Title, uca.ClientSideComponentId, uca.Location, uca.ClientSideComponentProperties].join(', ')));
         }
     }, function (error) {
         console.log(colors.red(error.message));

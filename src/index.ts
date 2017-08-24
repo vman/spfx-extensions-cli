@@ -45,22 +45,23 @@ if (program.list) {
   displayExtentions(`web/lists/GetByTitle('${program.list}')`);
 }
 
-function displayExtentions(path: string) {
+function displayExtentions(scope: string) {
   if (!prefs.siteUrl) {
     console.error('Please use --connect <siteurl');
   }
 
   request.get({
-    url: `${prefs.siteUrl}/_api/${path}/UserCustomActions?$filter=startswith(Location, 'ClientSideExtension')
+    url: `${prefs.siteUrl}/_api/${scope}/UserCustomActions?$filter=startswith(Location, 'ClientSideExtension')
     &$select=ClientSideComponentId,Title,Location,ClientSideComponentProperties`,
     headers: prefs.authHeaders
   }).then((response: any) => {
     const userCustomActions: IUserCustomAction[] = JSON.parse(response).value;
 
+    console.log(colors.magenta(`${scope} level spfx extentions at ${prefs.siteUrl}:`));
     console.log(colors.yellow('Title, ClientSideComponentId, Location, ClientSideComponentProperties'));
 
     for (const uca of userCustomActions) {
-      console.log(colors.green(uca.Title, uca.ClientSideComponentId, uca.Location, uca.ClientSideComponentProperties));
+      console.log(colors.green([uca.Title, uca.ClientSideComponentId, uca.Location, uca.ClientSideComponentProperties].join(', ')));
     }
   }, (error: Error) => {
     console.log(colors.red(error.message));
