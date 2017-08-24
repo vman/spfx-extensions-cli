@@ -4,7 +4,8 @@ Object.defineProperty(exports, "__esModule", { value: true });
 var program = require("Commander");
 var node_sp_auth_1 = require("node-sp-auth");
 var request = require("request-promise");
-var preferences = require('preferences');
+var Preferences = require('preferences');
+var colors = require('colors/safe');
 program
     .version('0.1.0')
     .option('-c, --connect <siteurl>', 'Connect to SharePoint Online', null)
@@ -12,7 +13,7 @@ program
     .option('-s, --sitecollection', 'Show extentions at the site collection level')
     .option('-l, --list <list title>', 'Show extentions at the list level')
     .parse(process.argv);
-var prefs = new preferences('vman.sp.extentions.cli', {
+var prefs = new Preferences('vman.sp.extentions.cli', {
     siteUrl: '',
     authHeaders: null
 });
@@ -42,15 +43,16 @@ function displayExtentions(path) {
         console.error('Please use --connect <siteurl');
     }
     request.get({
-        url: prefs.siteUrl + "/_api/" + path + "/UserCustomActions?$filter=Location eq 'ClientSideExtension.ApplicationCustomizer'",
+        url: prefs.siteUrl + "/_api/" + path + "/UserCustomActions?$filter=startswith(Location, 'ClientSideExtension')\n    &$select=ClientSideComponentId,Title,Location,ClientSideComponentProperties",
         headers: prefs.authHeaders
     }).then(function (response) {
         var userCustomActions = JSON.parse(response).value;
+        console.log(colors.yellow('Title, ClientSideComponentId, Location, ClientSideComponentProperties'));
         for (var _i = 0, userCustomActions_1 = userCustomActions; _i < userCustomActions_1.length; _i++) {
             var uca = userCustomActions_1[_i];
-            console.log("Title: " + uca.Title + ",\n                   ClientSideComponentId: " + uca.ClientSideComponentId + ",\n                   ClientSideComponentProperties: " + uca.ClientSideComponentProperties + ",\n                   Location: " + uca.Location);
+            console.log(colors.green(uca.Title, uca.ClientSideComponentId, uca.Location, uca.ClientSideComponentProperties));
         }
     }, function (error) {
-        console.error(error.message);
+        console.log(colors.red(error.message));
     });
 }

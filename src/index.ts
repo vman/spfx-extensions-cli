@@ -2,8 +2,9 @@
 import * as program from 'Commander';
 import { getAuth, IAuthResponse } from 'node-sp-auth';
 import * as request from 'request-promise';
-const preferences: any = require('preferences');
+const Preferences: any = require('preferences');
 import { IUserCustomAction } from './interfaces';
+const colors = require('colors/safe');
 
 program
   .version('0.1.0')
@@ -13,7 +14,7 @@ program
   .option('-l, --list <list title>', 'Show extentions at the list level')
   .parse(process.argv);
 
-const prefs = new preferences('vman.sp.extentions.cli', {
+const prefs = new Preferences('vman.sp.extentions.cli', {
   siteUrl: '',
   authHeaders: null
 });
@@ -50,18 +51,18 @@ function displayExtentions(path: string) {
   }
 
   request.get({
-    url: `${prefs.siteUrl}/_api/${path}/UserCustomActions?$filter=Location eq 'ClientSideExtension.ApplicationCustomizer'`,
+    url: `${prefs.siteUrl}/_api/${path}/UserCustomActions?$filter=startswith(Location, 'ClientSideExtension')
+    &$select=ClientSideComponentId,Title,Location,ClientSideComponentProperties`,
     headers: prefs.authHeaders
   }).then((response: any) => {
     const userCustomActions: IUserCustomAction[] = JSON.parse(response).value;
 
+    console.log(colors.yellow('Title, ClientSideComponentId, Location, ClientSideComponentProperties'));
+
     for (const uca of userCustomActions) {
-      console.log(`Title: ${uca.Title},
-                   ClientSideComponentId: ${uca.ClientSideComponentId},
-                   ClientSideComponentProperties: ${uca.ClientSideComponentProperties},
-                   Location: ${uca.Location}`);
+      console.log(colors.green(uca.Title, uca.ClientSideComponentId, uca.Location, uca.ClientSideComponentProperties));
     }
   }, (error: Error) => {
-    console.error(error.message);
+    console.log(colors.red(error.message));
   });
 }
