@@ -3,7 +3,7 @@ import * as program from 'Commander';
 import { getAuth, IAuthResponse } from 'node-sp-auth';
 import * as request from 'request-promise';
 const Preferences: any = require('preferences');
-import { IUserCustomAction } from './interfaces';
+import { IExtention, IFieldCustomizer } from './interfaces';
 const colors = require('colors/safe');
 
 program
@@ -42,28 +42,58 @@ if (program.sitecollection) {
 }
 
 if (program.list) {
-  displayExtentions(`web/lists/GetByTitle('${program.list}')`);
+  displayListExtentions();
 }
 
-function displayExtentions(scope: string) {
-  if (!prefs.siteUrl) {
-    console.error('Please use --connect <siteurl');
-  }
+async function displayExtentions(scope: string) {
+  try {
+    ensureAuth();
 
-  request.get({
-    url: `${prefs.siteUrl}/_api/${scope}/UserCustomActions?$filter=startswith(Location, 'ClientSideExtension')
-    &$select=ClientSideComponentId,Title,Location,ClientSideComponentProperties`,
-    headers: prefs.authHeaders
-  }).then((response: any) => {
-    const userCustomActions: IUserCustomAction[] = JSON.parse(response).value;
+    const restUrl: string = `${prefs.siteUrl}/_api/${scope}/UserCustomActions?$filter=startswith(Location, 'ClientSideExtension')
+    &$select=ClientSideComponentId,Title,Location,ClientSideComponentProperties`;
+    const extention: IExtention[] = await fetchExtentions(restUrl);
 
-    console.log(colors.magenta(`${scope} level spfx extentions at ${prefs.siteUrl}:`));
+    //add cli-table back in
+    console.log(colors.magenta(`'${scope}' level spfx extentions at '${prefs.siteUrl}'`));
     console.log(colors.yellow('Title, ClientSideComponentId, Location, ClientSideComponentProperties'));
-
-    for (const uca of userCustomActions) {
-      console.log(colors.green([uca.Title, uca.ClientSideComponentId, uca.Location, uca.ClientSideComponentProperties].join(', ')));
+    for (const ext of extention) {
+      console.log(colors.green([ext.Title, ext.ClientSideComponentId, ext.Location, ext.ClientSideComponentProperties].join(', ')));
     }
-  }, (error: Error) => {
+
+  } catch (error) {
     console.log(colors.red(error.message));
+  }
+}
+
+function ensureAuth() {
+  if (!prefs.siteUrl) {
+    throw new Error('Please use --connect <siteurl> to auth with SPO. Type --help for help.');
+  }
+}
+
+async function fetchExtentions(restUrl: string) {
+  const response: any = await request.get({
+    url: restUrl,
+    headers: prefs.authHeaders
   });
+  return JSON.parse(response).value;
+}
+
+async function displayListExtentions() {
+  try {
+    ensureAuth();
+    const restUrl: string = `${prefs.siteUrl}/_api/web/1lists/GetByTitle('${program.list}')/fields?
+  $select=Title,ClientSideComponentId,ClientSideComponentProperties`;
+
+    const fieldCustomizers: IFieldCustomizer[] = (await fetchExtentions(restUrl) as any[])
+      .filter((field) => field.ClientSideComponentId !== '00000000-0000-0000-0000-000000000000');
+
+    console.log(colors.magenta(`field customizer spfx extentions on '${program.list}' at '${prefs.siteUrl}'`));
+    console.log(colors.yellow('Title, ClientSideComponentId, ClientSideComponentProperties'));
+    for (const fc of fieldCustomizers) {
+      console.log(colors.green([fc.Title, fc.ClientSideComponentId, fc.ClientSideComponentProperties].join(', ')));
+    }
+  } catch (error) {
+    console.log(colors.red(error.message));
+  }
 }
