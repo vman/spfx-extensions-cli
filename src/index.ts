@@ -10,7 +10,7 @@ program
   .option('-c, --connect <siteurl>', 'Connect to SharePoint Online', null)
   .option('-w, --web', 'Show extentions at the web level')
   .option('-s, --sitecollection', 'Show extentions at the site collection level')
-  .option('-l, --list <listtitle>', 'Show extentions at the list level')
+  .option('-l, --list <list title>', 'Show extentions at the list level')
   .parse(process.argv);
 
 const prefs = new preferences('vman.sp.extentions.cli', {
@@ -33,34 +33,26 @@ if (program.connect) {
 }
 
 if (program.web) {
-  if (!prefs.siteUrl) {
-    console.error('Please use --connect');
-  }
-
-  request.get({
-    url: `${prefs.siteUrl}/_api/web/UserCustomActions?$filter=Location eq 'ClientSideExtension.ApplicationCustomizer'`,
-    headers: prefs.authHeaders
-  }).then((response) => {
-    const userCustomActions: IUserCustomAction[] = JSON.parse(response).value;
-
-    for (const uca of userCustomActions) {
-      console.log(`Title: ${uca.Title},
-                   ClientSideComponentId: ${uca.ClientSideComponentId},
-                   ClientSideComponentProperties: ${uca.ClientSideComponentProperties},
-                   Location: ${uca.Location}`);
-    }
-  });
+  displayExtentions('web');
 }
 
 if (program.sitecollection) {
+  displayExtentions('site');
+}
+
+if (program.list) {
+  displayExtentions(`web/lists/GetByTitle('${program.list}')`);
+}
+
+function displayExtentions(path: string) {
   if (!prefs.siteUrl) {
     console.error('Please use --connect <siteurl');
   }
 
   request.get({
-    url: `${prefs.siteUrl}/_api/site/UserCustomActions?$filter=Location eq 'ClientSideExtension.ApplicationCustomizer'`,
+    url: `${prefs.siteUrl}/_api/${path}/UserCustomActions?$filter=Location eq 'ClientSideExtension.ApplicationCustomizer'`,
     headers: prefs.authHeaders
-  }).then((response) => {
+  }).then((response: any) => {
     const userCustomActions: IUserCustomAction[] = JSON.parse(response).value;
 
     for (const uca of userCustomActions) {
@@ -69,26 +61,7 @@ if (program.sitecollection) {
                    ClientSideComponentProperties: ${uca.ClientSideComponentProperties},
                    Location: ${uca.Location}`);
     }
-  });
-}
-
-if (program.list) {
-  if (!prefs.siteUrl) {
-    console.error('Please use --connect <siteurl>');
-  }
-
-  request.get({
-    url: `${prefs.siteUrl}/_api/web/lists/GetByTitle('${program.list}')/UserCustomActions?
-    $filter=Location eq 'ClientSideExtension.ApplicationCustomizer'`,
-    headers: prefs.authHeaders
-  }).then((response) => {
-    const userCustomActions: IUserCustomAction[] = JSON.parse(response).value;
-
-    for (const uca of userCustomActions) {
-      console.log(`Title: ${uca.Title},
-                   ClientSideComponentId: ${uca.ClientSideComponentId},
-                   ClientSideComponentProperties: ${uca.ClientSideComponentProperties},
-                   Location: ${uca.Location}`);
-    }
+  }, (error: Error) => {
+    console.error(error.message);
   });
 }
