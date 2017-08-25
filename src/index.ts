@@ -70,13 +70,17 @@ async function displayExtentions(scope: string) {
 
     //add cli-table back in
     console.log(colors.magenta(`'${scope}' level spfx extentions at '${prefs.siteUrl}'`));
-    console.log(colors.yellow('Title, ClientSideComponentId, Location, ClientSideComponentProperties'));
-    for (const ext of extentions) {
-      console.log(colors.green([ext.Title, ext.ClientSideComponentId, ext.Location, ext.ClientSideComponentProperties].join(', ')));
-    }
+    printToConsole(extentions);
 
   } catch (error) {
     console.log(colors.red(error.message));
+  }
+}
+
+function printToConsole(extentions: IExtention[]){
+  console.log(colors.yellow('Title | ClientSideComponentId | Location | ClientSideComponentProperties'));
+  for (const ext of extentions) {
+    console.log(colors.green([ext.Title, ext.ClientSideComponentId, ext.Location, ext.ClientSideComponentProperties].join(' | ')));
   }
 }
 
@@ -111,11 +115,10 @@ async function displayListExtentions() {
 
     const extentions: IExtention[] = getFieldCustomizers(await fetchExtentions(restUrl) as any[]);
 
-    console.log(colors.magenta(`field customizer spfx extentions on '${program.list}' at '${prefs.siteUrl}'`));
-    console.log(colors.yellow('Title, ClientSideComponentId, ClientSideComponentProperties'));
-    for (const ext of extentions) {
-      console.log(colors.green([ext.Title, ext.ClientSideComponentId, ext.ClientSideComponentProperties].join(', ')));
-    }
+    console.log(colors.magenta(`FieldCustomizer spfx extentions on '${program.list}' at '${prefs.siteUrl}'`));
+
+    printToConsole(extentions);
+
   } catch (error) {
     console.log(colors.red(error.message));
   }
