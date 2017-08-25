@@ -3,7 +3,7 @@ import * as program from 'Commander';
 import { getAuth, IAuthResponse } from 'node-sp-auth';
 import * as request from 'request-promise';
 const Preferences: any = require('preferences');
-import { IExtention, IFieldCustomizer } from './interfaces';
+import { IExtention } from './interfaces';
 const colors = require('colors/safe');
 
 program
@@ -49,20 +49,44 @@ async function displayExtentions(scope: string) {
   try {
     ensureAuth();
 
-    const restUrl: string = `${prefs.siteUrl}/_api/${scope}/UserCustomActions?$filter=startswith(Location, 'ClientSideExtension')
+    const userCustomActionUrl: string = `${prefs.siteUrl}/_api/${scope}/UserCustomActions?$filter=startswith(Location, 'ClientSideExtension')
     &$select=ClientSideComponentId,Title,Location,ClientSideComponentProperties`;
-    const extention: IExtention[] = await fetchExtentions(restUrl);
+
+    let fieldCustomizerUrl: string;
+    if (scope === 'web') {
+      fieldCustomizerUrl = `${prefs.siteUrl}/_api/${scope}/fields?$select=ClientSideComponentId,Title,ClientSideComponentProperties`;
+    }
+    else {
+      fieldCustomizerUrl = `${prefs.siteUrl}/_api/${scope}/rootWeb/availablefields?
+      $select=ClientSideComponentId,Title,ClientSideComponentProperties`;
+    }
+
+    const [exts, fields] = await Promise.all([fetchExtentions(userCustomActionUrl), fetchExtentions(fieldCustomizerUrl)]);
+
+    const siteExtentions: IExtention[] = exts as IExtention[];
+    const fieldCustomizers: IExtention[] = getFieldCustomizers(fields as IExtention[]);
+
+    const extentions = siteExtentions.concat(fieldCustomizers);
 
     //add cli-table back in
     console.log(colors.magenta(`'${scope}' level spfx extentions at '${prefs.siteUrl}'`));
     console.log(colors.yellow('Title, ClientSideComponentId, Location, ClientSideComponentProperties'));
-    for (const ext of extention) {
+    for (const ext of extentions) {
       console.log(colors.green([ext.Title, ext.ClientSideComponentId, ext.Location, ext.ClientSideComponentProperties].join(', ')));
     }
 
   } catch (error) {
     console.log(colors.red(error.message));
   }
+}
+
+function getFieldCustomizers(fields: IExtention[]){
+  return fields
+  .filter((field) => field.ClientSideComponentId !== '00000000-0000-0000-0000-000000000000')
+  .map((fieldCustomizer) => {
+    fieldCustomizer.Location = 'FieldCustomizer';
+    return fieldCustomizer;
+  });
 }
 
 function ensureAuth() {
@@ -82,16 +106,15 @@ async function fetchExtentions(restUrl: string) {
 async function displayListExtentions() {
   try {
     ensureAuth();
-    const restUrl: string = `${prefs.siteUrl}/_api/web/1lists/GetByTitle('${program.list}')/fields?
+    const restUrl: string = `${prefs.siteUrl}/_api/web/lists/GetByTitle('${program.list}')/fields?
   $select=Title,ClientSideComponentId,ClientSideComponentProperties`;
 
-    const fieldCustomizers: IFieldCustomizer[] = (await fetchExtentions(restUrl) as any[])
-      .filter((field) => field.ClientSideComponentId !== '00000000-0000-0000-0000-000000000000');
+    const extentions: IExtention[] = getFieldCustomizers(await fetchExtentions(restUrl) as any[]);
 
     console.log(colors.magenta(`field customizer spfx extentions on '${program.list}' at '${prefs.siteUrl}'`));
     console.log(colors.yellow('Title, ClientSideComponentId, ClientSideComponentProperties'));
-    for (const fc of fieldCustomizers) {
-      console.log(colors.green([fc.Title, fc.ClientSideComponentId, fc.ClientSideComponentProperties].join(', ')));
+    for (const ext of extentions) {
+      console.log(colors.green([ext.Title, ext.ClientSideComponentId, ext.ClientSideComponentProperties].join(', ')));
     }
   } catch (error) {
     console.log(colors.red(error.message));
