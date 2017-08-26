@@ -1,6 +1,6 @@
 {
   "name": "spfx-extentions-cli",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "description": "CLI to view and manage SharePoint Framework extentions",
   "main": "index.ts",
   "scripts": {

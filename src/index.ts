@@ -50,22 +50,12 @@ async function displayExtentions(scope: ExtensionScope) {
   try {
     ensureAuth();
 
-    const userCustomActionUrl: string = `${prefs.siteUrl}/_api/${scope}/UserCustomActions?
-    $filter=startswith(Location, 'ClientSideExtension')
-    &$select=ClientSideComponentId,Title,Location,ClientSideComponentProperties`;
+    const userCustomActionUrl: string = `${prefs.siteUrl}/_api/${scope}/UserCustomActions?$filter=startswith(Location, 'ClientSideExtension')&$select=ClientSideComponentId,Title,Location,ClientSideComponentProperties`;
 
-    let fieldCustomizerUrl: string;
-    if (scope === ExtensionScope.Web) {
-      fieldCustomizerUrl = `${prefs.siteUrl}/_api/${scope}/fields?
-      $select=ClientSideComponentId,Title,ClientSideComponentProperties`;
-    }
-    else {
-      fieldCustomizerUrl = `${prefs.siteUrl}/_api/${scope}/rootWeb/availablefields?
-      $select=ClientSideComponentId,Title,ClientSideComponentProperties`;
-    }
+    const fieldsPath: string = (scope === ExtensionScope.Web) ? 'fields' : 'rootWeb/availablefields';
+    const fieldCustomizerUrl: string = `${prefs.siteUrl}/_api/${scope}/${fieldsPath}?$select=ClientSideComponentId,Title,ClientSideComponentProperties`;
 
-    const [exts, fields] = await Promise.all([fetchExtentions(userCustomActionUrl),
-       fetchExtentions(fieldCustomizerUrl)]);
+    const [exts, fields] = await Promise.all([fetchExtentions(userCustomActionUrl), fetchExtentions(fieldCustomizerUrl)]);
 
     const siteExtentions: IExtention[] = exts as IExtention[];
     const fieldCustomizers: IExtention[] = getFieldCustomizers(fields as IExtention[]);
@@ -83,9 +73,7 @@ async function displayExtentions(scope: ExtensionScope) {
 function printToConsole(extentions: IExtention[]){
   console.log(colors.yellow('Title | ClientSideComponentId | Location | ClientSideComponentProperties'));
   for (const ext of extentions) {
-    console.log(colors.green([ext.Title, ext.ClientSideComponentId,
-      ext.Location,
-      ext.ClientSideComponentProperties].join(' | ')));
+    console.log(colors.green([ext.Title, ext.ClientSideComponentId, ext.Location, ext.ClientSideComponentProperties].join(' | ')));
   }
 }
 
@@ -115,8 +103,7 @@ async function fetchExtentions(restUrl: string) {
 async function displayListExtentions() {
   try {
     ensureAuth();
-    const restUrl: string = `${prefs.siteUrl}/_api/web/lists/GetByTitle('${program.list}')/fields?
-  $select=Title,ClientSideComponentId,ClientSideComponentProperties`;
+    const restUrl: string = `${prefs.siteUrl}/_api/web/lists/GetByTitle('${program.list}')/fields?$select=Title,ClientSideComponentId,ClientSideComponentProperties`;
 
     const extentions: IExtention[] = getFieldCustomizers(await fetchExtentions(restUrl) as any[]);
 

@@ -46,7 +46,7 @@
       false
     ],
     "max-line-length": [
-      true,
+      false,
       120
     ]
   },
