@@ -1,12 +1,13 @@
 {
   "name": "spfx-extentions-cli",
-  "version": "0.0.3",
+  "version": "0.0.4",
   "description": "CLI to view and manage SharePoint Framework extentions",
   "main": "index.ts",
   "scripts": {
-    "watch": "tsc -p . -w",
-    "prod": "tsc -p . && npm link",
-    "dev": "tsc -p ."
+    "dev": "tsc -p . -w",
+    "link": "tsc -p . && npm link",
+    "prod": "tsc -p .",
+    "prepare": "npm run prod"
   },
   "bin": {
     "spfx-ext": "./dist/index.js"
