@@ -2,16 +2,17 @@
 import * as program from 'Commander';
 import { getAuth, IAuthResponse } from 'node-sp-auth';
 import * as request from 'request-promise';
-const Preferences: any = require('preferences');
 import { IExtention } from './interfaces';
+import { ExtensionScope } from './enums';
+const Preferences = require('preferences');
 const colors = require('colors/safe');
 
 program
   .version('0.1.0')
-  .option('-c, --connect <siteurl>', 'Connect to SharePoint Online', null)
+  .option('-c, --connect <siteurl>', 'Connect to SharePoint Online at <siteurl>', null)
   .option('-w, --web', 'Show extentions at the web level')
   .option('-s, --sitecollection', 'Show extentions at the site collection level')
-  .option('-l, --list <list title>', 'Show extentions at the list level')
+  .option('-l, --list <listtitle>', 'Show extentions at the list level for <listtitle>')
   .parse(process.argv);
 
 const prefs = new Preferences('vman.sp.extentions.cli', {
@@ -34,18 +35,18 @@ if (program.connect) {
 }
 
 if (program.web) {
-  displayExtentions('web');
+  displayExtentions(ExtensionScope.Web);
 }
 
 if (program.sitecollection) {
-  displayExtentions('site');
+  displayExtentions(ExtensionScope.SiteCollection);
 }
 
 if (program.list) {
   displayListExtentions();
 }
 
-async function displayExtentions(scope: string) {
+async function displayExtentions(scope: ExtensionScope) {
   try {
     ensureAuth();
 
@@ -53,7 +54,7 @@ async function displayExtentions(scope: string) {
     &$select=ClientSideComponentId,Title,Location,ClientSideComponentProperties`;
 
     let fieldCustomizerUrl: string;
-    if (scope === 'web') {
+    if (scope === ExtensionScope.Web) {
       fieldCustomizerUrl = `${prefs.siteUrl}/_api/${scope}/fields?$select=ClientSideComponentId,Title,ClientSideComponentProperties`;
     }
     else {
@@ -68,7 +69,6 @@ async function displayExtentions(scope: string) {
 
     const extentions = siteExtentions.concat(fieldCustomizers);
 
-    //add cli-table back in
     console.log(colors.magenta(`'${scope}' level spfx extentions at '${prefs.siteUrl}'`));
     printToConsole(extentions);
 
