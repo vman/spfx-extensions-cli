@@ -49,7 +49,7 @@ program
     .option('-s, --sitecollection', 'Show extentions at the site collection level')
     .option('-l, --list <listtitle>', 'Show extentions at the list level for <listtitle>')
     .parse(process.argv);
-var prefs = new Preferences('vman.sp.extentions.cli', {
+var prefs = new Preferences('vman.spfx.extentions.cli', {
     siteUrl: '',
     authHeaders: null
 });
