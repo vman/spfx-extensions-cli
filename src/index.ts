@@ -50,19 +50,22 @@ async function displayExtentions(scope: ExtensionScope) {
   try {
     ensureAuth();
 
-    const userCustomActionUrl: string = `${prefs.siteUrl}/_api/${scope}/UserCustomActions?$filter=startswith(Location, 'ClientSideExtension')
+    const userCustomActionUrl: string = `${prefs.siteUrl}/_api/${scope}/UserCustomActions?
+    $filter=startswith(Location, 'ClientSideExtension')
     &$select=ClientSideComponentId,Title,Location,ClientSideComponentProperties`;
 
     let fieldCustomizerUrl: string;
     if (scope === ExtensionScope.Web) {
-      fieldCustomizerUrl = `${prefs.siteUrl}/_api/${scope}/fields?$select=ClientSideComponentId,Title,ClientSideComponentProperties`;
+      fieldCustomizerUrl = `${prefs.siteUrl}/_api/${scope}/fields?
+      $select=ClientSideComponentId,Title,ClientSideComponentProperties`;
     }
     else {
       fieldCustomizerUrl = `${prefs.siteUrl}/_api/${scope}/rootWeb/availablefields?
       $select=ClientSideComponentId,Title,ClientSideComponentProperties`;
     }
 
-    const [exts, fields] = await Promise.all([fetchExtentions(userCustomActionUrl), fetchExtentions(fieldCustomizerUrl)]);
+    const [exts, fields] = await Promise.all([fetchExtentions(userCustomActionUrl),
+       fetchExtentions(fieldCustomizerUrl)]);
 
     const siteExtentions: IExtention[] = exts as IExtention[];
     const fieldCustomizers: IExtention[] = getFieldCustomizers(fields as IExtention[]);
@@ -80,7 +83,9 @@ async function displayExtentions(scope: ExtensionScope) {
 function printToConsole(extentions: IExtention[]){
   console.log(colors.yellow('Title | ClientSideComponentId | Location | ClientSideComponentProperties'));
   for (const ext of extentions) {
-    console.log(colors.green([ext.Title, ext.ClientSideComponentId, ext.Location, ext.ClientSideComponentProperties].join(' | ')));
+    console.log(colors.green([ext.Title, ext.ClientSideComponentId,
+      ext.Location,
+      ext.ClientSideComponentProperties].join(' | ')));
   }
 }
 

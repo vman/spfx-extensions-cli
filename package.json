@@ -1,7 +1,7 @@
 {
-  "name": "spfx-ext",
+  "name": "spfx-extentions-cli",
   "version": "0.1.0",
-  "description": "",
+  "description": "CLI to view and manage SharePoint Framework extentions",
   "main": "index.ts",
   "scripts": {
     "watch": "tsc -p . -w",
@@ -26,5 +26,20 @@
     "node-sp-auth": "^2.1.1",
     "preferences": "^0.2.1",
     "request-promise": "^4.2.1"
-  }
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/vman/spfx-extentions-cli.git"
+  },
+  "keywords": [
+    "SharePoint",
+    "SharePoint Framework",
+    "SPFx",
+    "CLI",
+    "Extentions"
+  ],
+  "bugs": {
+    "url": "https://github.com/vman/spfx-extentions-cli/issues"
+  },
+  "homepage": "https://github.com/vman/spfx-extentions-cli#readme"
 }
