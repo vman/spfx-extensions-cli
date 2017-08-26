@@ -15,7 +15,7 @@ program
   .option('-l, --list <listtitle>', 'Show extentions at the list level for <listtitle>')
   .parse(process.argv);
 
-const prefs = new Preferences('vman.sp.extentions.cli', {
+const prefs = new Preferences('vman.spfx.extentions.cli', {
   siteUrl: '',
   authHeaders: null
 });
