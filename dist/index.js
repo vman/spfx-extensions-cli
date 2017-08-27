@@ -42,8 +42,9 @@ var request = require("request-promise");
 var enums_1 = require("./enums");
 var Preferences = require('preferences');
 var colors = require('colors/safe');
+var pjson = require('../package.json');
 program
-    .version('0.1.0')
+    .version(pjson.version)
     .option('-c, --connect <siteurl>', 'Connect to SharePoint Online at <siteurl>', null)
     .option('-w, --web', 'Show extensions at the web level')
     .option('-s, --sitecollection', 'Show extensions at the site collection level')

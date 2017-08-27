@@ -4,11 +4,13 @@ import { getAuth, IAuthResponse } from 'node-sp-auth';
 import * as request from 'request-promise';
 import { IExtension } from './interfaces';
 import { ExtensionScope } from './enums';
+
 const Preferences = require('preferences');
 const colors = require('colors/safe');
+const pjson = require('../package.json');
 
 program
-  .version('0.1.0')
+  .version(pjson.version)
   .option('-c, --connect <siteurl>', 'Connect to SharePoint Online at <siteurl>', null)
   .option('-w, --web', 'Show extensions at the web level')
   .option('-s, --sitecollection', 'Show extensions at the site collection level')
