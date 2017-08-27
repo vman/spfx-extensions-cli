@@ -48,8 +48,26 @@ program
     .option('-c, --connect <siteurl>', 'Connect to SharePoint Online at <siteurl>', null)
     .option('-w, --web', 'Show extensions at the web level')
     .option('-s, --sitecollection', 'Show extensions at the site collection level')
-    .option('-l, --list <listtitle>', 'Show extensions at the list level for <listtitle>')
-    .parse(process.argv);
+    .option('-l, --list <listtitle>', 'Show extensions at the list level for <listtitle>');
+program
+    .command('add <Type> <Scope> <ClientSideComponentId> [ClientSideComponentProperties]')
+    .action(function (Type, Scope, ClientSideComponentId, ClientSideComponentProperties) {
+    console.log(Type, Scope, ClientSideComponentId, ClientSideComponentProperties);
+})
+    .on('--help', function () {
+    console.log('');
+    console.log('<Type> Type of extension (ApplicationCustomizer| CommandSet | FieldCustomizer)');
+    console.log('<Scope> Scope at which to add the extention (sitecollection | web | list)');
+    console.log('');
+});
+program.on('--help', function () {
+    console.log('  Examples:');
+    console.log('');
+    console.log('    $ custom-help --help');
+    console.log('    $ custom-help -h');
+    console.log('');
+});
+program.parse(process.argv);
 var prefs = new Preferences('vman.spfx.extensions.cli', {
     siteUrl: '',
     authHeaders: null

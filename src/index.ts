@@ -14,8 +14,23 @@ program
   .option('-c, --connect <siteurl>', 'Connect to SharePoint Online at <siteurl>', null)
   .option('-w, --web', 'Show extensions at the web level')
   .option('-s, --sitecollection', 'Show extensions at the site collection level')
-  .option('-l, --list <listtitle>', 'Show extensions at the list level for <listtitle>')
-  .parse(process.argv);
+  .option('-l, --list <listtitle>', 'Show extensions at the list level for <listtitle>');
+
+program
+  .command('add <Type> <Scope> <ClientSideComponentId> [ClientSideComponentProperties]')
+  .action((Type, Scope, ClientSideComponentId, ClientSideComponentProperties) => {
+    console.log(Type, Scope, ClientSideComponentId, ClientSideComponentProperties);
+  })
+  .on('--help', () => {
+    console.log('');
+    console.log('<Type> Type of extension (ApplicationCustomizer| CommandSet | FieldCustomizer)');
+    console.log('<Scope> Scope at which to add the extension (sitecollection | web | list)');
+    console.log('<ClientSideComponentId> of the extension');
+    console.log('[ClientSideComponentProperties] optional properties to add to the extension');
+    console.log('');
+  });
+
+program.parse(process.argv);
 
 const prefs = new Preferences('vman.spfx.extensions.cli', {
   siteUrl: '',
@@ -72,20 +87,20 @@ async function displayExtensions(scope: ExtensionScope) {
   }
 }
 
-function printToConsole(extensions: IExtension[]){
+function printToConsole(extensions: IExtension[]) {
   console.log(colors.yellow('Title | ClientSideComponentId | Location | ClientSideComponentProperties'));
   for (const ext of extensions) {
     console.log(colors.green([ext.Title, ext.ClientSideComponentId, ext.Location, ext.ClientSideComponentProperties].join(' | ')));
   }
 }
 
-function getFieldCustomizers(fields: IExtension[]){
+function getFieldCustomizers(fields: IExtension[]) {
   return fields
-  .filter((field) => field.ClientSideComponentId !== '00000000-0000-0000-0000-000000000000')
-  .map((fieldCustomizer) => {
-    fieldCustomizer.Location = 'FieldCustomizer';
-    return fieldCustomizer;
-  });
+    .filter((field) => field.ClientSideComponentId !== '00000000-0000-0000-0000-000000000000')
+    .map((fieldCustomizer) => {
+      fieldCustomizer.Location = 'FieldCustomizer';
+      return fieldCustomizer;
+    });
 }
 
 function ensureAuth() {
