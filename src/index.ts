@@ -2,7 +2,7 @@
 import * as program from 'Commander';
 import { getAuth, IAuthResponse } from 'node-sp-auth';
 import * as request from 'request-promise';
-import { IExtention } from './interfaces';
+import { IExtension } from './interfaces';
 import { ExtensionScope } from './enums';
 const Preferences = require('preferences');
 const colors = require('colors/safe');
@@ -10,12 +10,12 @@ const colors = require('colors/safe');
 program
   .version('0.1.0')
   .option('-c, --connect <siteurl>', 'Connect to SharePoint Online at <siteurl>', null)
-  .option('-w, --web', 'Show extentions at the web level')
-  .option('-s, --sitecollection', 'Show extentions at the site collection level')
-  .option('-l, --list <listtitle>', 'Show extentions at the list level for <listtitle>')
+  .option('-w, --web', 'Show extensions at the web level')
+  .option('-s, --sitecollection', 'Show extensions at the site collection level')
+  .option('-l, --list <listtitle>', 'Show extensions at the list level for <listtitle>')
   .parse(process.argv);
 
-const prefs = new Preferences('vman.spfx.extentions.cli', {
+const prefs = new Preferences('vman.spfx.extensions.cli', {
   siteUrl: '',
   authHeaders: null
 });
@@ -35,18 +35,18 @@ if (program.connect) {
 }
 
 if (program.web) {
-  displayExtentions(ExtensionScope.Web);
+  displayExtensions(ExtensionScope.Web);
 }
 
 if (program.sitecollection) {
-  displayExtentions(ExtensionScope.SiteCollection);
+  displayExtensions(ExtensionScope.SiteCollection);
 }
 
 if (program.list) {
-  displayListExtentions();
+  displayListExtensions();
 }
 
-async function displayExtentions(scope: ExtensionScope) {
+async function displayExtensions(scope: ExtensionScope) {
   try {
     ensureAuth();
 
@@ -55,29 +55,29 @@ async function displayExtentions(scope: ExtensionScope) {
     const fieldsPath: string = (scope === ExtensionScope.Web) ? 'fields' : 'rootWeb/availablefields';
     const fieldCustomizerUrl: string = `${prefs.siteUrl}/_api/${scope}/${fieldsPath}?$select=ClientSideComponentId,Title,ClientSideComponentProperties`;
 
-    const [exts, fields] = await Promise.all([fetchExtentions(userCustomActionUrl), fetchExtentions(fieldCustomizerUrl)]);
+    const [exts, fields] = await Promise.all([fetchExtensions(userCustomActionUrl), fetchExtensions(fieldCustomizerUrl)]);
 
-    const siteExtentions: IExtention[] = exts as IExtention[];
-    const fieldCustomizers: IExtention[] = getFieldCustomizers(fields as IExtention[]);
+    const siteExtensions: IExtension[] = exts as IExtension[];
+    const fieldCustomizers: IExtension[] = getFieldCustomizers(fields as IExtension[]);
 
-    const extentions = siteExtentions.concat(fieldCustomizers);
+    const extensions = siteExtensions.concat(fieldCustomizers);
 
-    console.log(colors.magenta(`'${scope}' level spfx extentions at '${prefs.siteUrl}'`));
-    printToConsole(extentions);
+    console.log(colors.magenta(`'${scope}' level spfx extensions at '${prefs.siteUrl}'`));
+    printToConsole(extensions);
 
   } catch (error) {
     console.log(colors.red(error.message));
   }
 }
 
-function printToConsole(extentions: IExtention[]){
+function printToConsole(extensions: IExtension[]){
   console.log(colors.yellow('Title | ClientSideComponentId | Location | ClientSideComponentProperties'));
-  for (const ext of extentions) {
+  for (const ext of extensions) {
     console.log(colors.green([ext.Title, ext.ClientSideComponentId, ext.Location, ext.ClientSideComponentProperties].join(' | ')));
   }
 }
 
-function getFieldCustomizers(fields: IExtention[]){
+function getFieldCustomizers(fields: IExtension[]){
   return fields
   .filter((field) => field.ClientSideComponentId !== '00000000-0000-0000-0000-000000000000')
   .map((fieldCustomizer) => {
@@ -92,7 +92,7 @@ function ensureAuth() {
   }
 }
 
-async function fetchExtentions(restUrl: string) {
+async function fetchExtensions(restUrl: string) {
   const response: any = await request.get({
     url: restUrl,
     headers: prefs.authHeaders
@@ -100,16 +100,16 @@ async function fetchExtentions(restUrl: string) {
   return JSON.parse(response).value;
 }
 
-async function displayListExtentions() {
+async function displayListExtensions() {
   try {
     ensureAuth();
     const restUrl: string = `${prefs.siteUrl}/_api/web/lists/GetByTitle('${program.list}')/fields?$select=Title,ClientSideComponentId,ClientSideComponentProperties`;
 
-    const extentions: IExtention[] = getFieldCustomizers(await fetchExtentions(restUrl) as any[]);
+    const extensions: IExtension[] = getFieldCustomizers(await fetchExtensions(restUrl) as any[]);
 
-    console.log(colors.magenta(`FieldCustomizer spfx extentions on '${program.list}' at '${prefs.siteUrl}'`));
+    console.log(colors.magenta(`FieldCustomizer spfx extensions on '${program.list}' at '${prefs.siteUrl}'`));
 
-    printToConsole(extentions);
+    printToConsole(extensions);
 
   } catch (error) {
     console.log(colors.red(error.message));

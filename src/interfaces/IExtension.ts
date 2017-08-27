@@ -1,4 +1,4 @@
-export interface IExtention {
+export interface IExtension {
   ClientSideComponentId: string;
   ClientSideComponentProperties: string;
   Title: string;

@@ -1,1 +1,1 @@
-export { IExtention } from './IExtention';
+export { IExtension } from './IExtension';
