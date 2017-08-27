@@ -1,5 +1,7 @@
 # spfx-extensions-cli (preview)
 
+[![NPM](https://nodei.co/npm/spfx-extensions-cli.png?compact=true)](https://nodei.co/npm/spfx-extensions-cli/)
+
 CLI tool to view SharePoint Framework extensions currently installed on a Site Collection, Site or a List.
 
 > Note: SharePoint Framework extensions are in preview right now. It is not recommended to use them in production yet. The functionality of this tool might change after extensions reach GA.
