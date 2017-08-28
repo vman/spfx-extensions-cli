@@ -1,5 +1,13 @@
 #!/usr/bin/env node
 "use strict";
+var __assign = (this && this.__assign) || Object.assign || function(t) {
+    for (var s, i = 1, n = arguments.length; i < n; i++) {
+        s = arguments[i];
+        for (var p in s) if (Object.prototype.hasOwnProperty.call(s, p))
+            t[p] = s[p];
+    }
+    return t;
+};
 var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
     return new (P || (P = Promise))(function (resolve, reject) {
         function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
@@ -43,6 +51,10 @@ var enums_1 = require("./enums");
 var Preferences = require('preferences');
 var colors = require('colors/safe');
 var pjson = require('../package.json');
+var prefs = new Preferences('vman.spfx.extensions.cli', {
+    siteUrl: '',
+    authHeaders: null
+});
 program
     .version(pjson.version)
     .option('-c, --connect <siteurl>', 'Connect to SharePoint Online at <siteurl>', null)
@@ -50,28 +62,18 @@ program
     .option('-s, --sitecollection', 'Show extensions at the site collection level')
     .option('-l, --list <listtitle>', 'Show extensions at the list level for <listtitle>');
 program
-    .command('add <Type> <Scope> <ClientSideComponentId> [ClientSideComponentProperties]')
-    .action(function (Type, Scope, ClientSideComponentId, ClientSideComponentProperties) {
-    console.log(Type, Scope, ClientSideComponentId, ClientSideComponentProperties);
-})
+    .command('add <title> <type> <scope> <clientSideComponentId> [clientSideComponentProperties]')
+    .action(addExtension)
     .on('--help', function () {
     console.log('');
-    console.log('<Type> Type of extension (ApplicationCustomizer| CommandSet | FieldCustomizer)');
-    console.log('<Scope> Scope at which to add the extention (sitecollection | web | list)');
-    console.log('');
-});
-program.on('--help', function () {
-    console.log('  Examples:');
-    console.log('');
-    console.log('    $ custom-help --help');
-    console.log('    $ custom-help -h');
+    console.log('<Title> of the extension');
+    console.log('<Type> of the extension (ApplicationCustomizer | CommandSet)');
+    console.log('<Scope> Scope at which to add the extension (sitecollection | web )');
+    console.log('<ClientSideComponentId> of the extension');
+    console.log('[ClientSideComponentProperties] optional properties to add to the extension');
     console.log('');
 });
 program.parse(process.argv);
-var prefs = new Preferences('vman.spfx.extensions.cli', {
-    siteUrl: '',
-    authHeaders: null
-});
 if (program.connect) {
     prefs.siteUrl = program.connect;
     node_sp_auth_1.getAuth(prefs.siteUrl, {
@@ -93,9 +95,38 @@ if (program.sitecollection) {
 if (program.list) {
     displayListExtensions();
 }
+function addExtension(title, type, scope, clientSideComponentId, clientSideComponentProperties) {
+    return __awaiter(this, void 0, void 0, function () {
+        var userCustomActionUrl, requestBody, _a, _b, error_1;
+        return __generator(this, function (_c) {
+            switch (_c.label) {
+                case 0:
+                    _c.trys.push([0, 2, , 3]);
+                    ensureAuth();
+                    userCustomActionUrl = prefs.siteUrl + "/_api/" + scope + "/UserCustomActions";
+                    requestBody = JSON.stringify({
+                        Title: title,
+                        Location: "ClientSideExtension." + type,
+                        ClientSideComponentId: clientSideComponentId,
+                        ClientSideComponentProperties: clientSideComponentProperties
+                    });
+                    _b = (_a = console).log;
+                    return [4 /*yield*/, postExtension(userCustomActionUrl, requestBody)];
+                case 1:
+                    _b.apply(_a, [_c.sent()]);
+                    return [3 /*break*/, 3];
+                case 2:
+                    error_1 = _c.sent();
+                    console.log(colors.red(error_1.message));
+                    return [3 /*break*/, 3];
+                case 3: return [2 /*return*/];
+            }
+        });
+    });
+}
 function displayExtensions(scope) {
     return __awaiter(this, void 0, void 0, function () {
-        var userCustomActionUrl, fieldsPath, fieldCustomizerUrl, _a, exts, fields, siteExtensions, fieldCustomizers, extensions, error_1;
+        var userCustomActionUrl, fieldsPath, fieldCustomizerUrl, _a, exts, fields, siteExtensions, fieldCustomizers, extensions, error_2;
         return __generator(this, function (_b) {
             switch (_b.label) {
                 case 0:
@@ -104,7 +135,7 @@ function displayExtensions(scope) {
                     userCustomActionUrl = prefs.siteUrl + "/_api/" + scope + "/UserCustomActions?$filter=startswith(Location, 'ClientSideExtension')&$select=ClientSideComponentId,Title,Location,ClientSideComponentProperties";
                     fieldsPath = (scope === enums_1.ExtensionScope.Web) ? 'fields' : 'rootWeb/availablefields';
                     fieldCustomizerUrl = prefs.siteUrl + "/_api/" + scope + "/" + fieldsPath + "?$select=ClientSideComponentId,Title,ClientSideComponentProperties";
-                    return [4 /*yield*/, Promise.all([fetchExtensions(userCustomActionUrl), fetchExtensions(fieldCustomizerUrl)])];
+                    return [4 /*yield*/, Promise.all([getExtensions(userCustomActionUrl), getExtensions(fieldCustomizerUrl)])];
                 case 1:
                     _a = _b.sent(), exts = _a[0], fields = _a[1];
                     siteExtensions = exts;
@@ -114,8 +145,8 @@ function displayExtensions(scope) {
                     printToConsole(extensions);
                     return [3 /*break*/, 3];
                 case 2:
-                    error_1 = _b.sent();
-                    console.log(colors.red(error_1.message));
+                    error_2 = _b.sent();
+                    console.log(colors.red(error_2.message));
                     return [3 /*break*/, 3];
                 case 3: return [2 /*return*/];
             }
@@ -139,10 +170,10 @@ function getFieldCustomizers(fields) {
 }
 function ensureAuth() {
     if (!prefs.siteUrl) {
-        throw new Error('Please use --connect <siteurl> to auth with SPO. Type --help for help.');
+        throw new Error('Please use spfx-ext --connect <siteurl> to auth with SPO. Type --help for help.');
     }
 }
-function fetchExtensions(restUrl) {
+function getExtensions(restUrl) {
     return __awaiter(this, void 0, void 0, function () {
         var response;
         return __generator(this, function (_a) {
@@ -158,9 +189,34 @@ function fetchExtensions(restUrl) {
         });
     });
 }
+function postExtension(restUrl, requestBody) {
+    return __awaiter(this, void 0, void 0, function () {
+        var reqDigestResponse, requestDigest, postHeaders, response;
+        return __generator(this, function (_a) {
+            switch (_a.label) {
+                case 0: return [4 /*yield*/, request.post({
+                        url: prefs.siteUrl + "/_api/contextinfo",
+                        headers: prefs.authHeaders
+                    })];
+                case 1:
+                    reqDigestResponse = _a.sent();
+                    requestDigest = JSON.parse(reqDigestResponse).FormDigestValue;
+                    postHeaders = __assign({}, prefs.authHeaders, { 'X-RequestDigest': requestDigest, 'content-type': 'application/json;odata=nometadata' });
+                    return [4 /*yield*/, request.post({
+                            url: restUrl,
+                            body: requestBody,
+                            headers: postHeaders
+                        })];
+                case 2:
+                    response = _a.sent();
+                    return [2 /*return*/, JSON.parse(response)];
+            }
+        });
+    });
+}
 function displayListExtensions() {
     return __awaiter(this, void 0, void 0, function () {
-        var restUrl, extensions, _a, error_2;
+        var restUrl, extensions, _a, error_3;
         return __generator(this, function (_b) {
             switch (_b.label) {
                 case 0:
@@ -168,15 +224,15 @@ function displayListExtensions() {
                     ensureAuth();
                     restUrl = prefs.siteUrl + "/_api/web/lists/GetByTitle('" + program.list + "')/fields?$select=Title,ClientSideComponentId,ClientSideComponentProperties";
                     _a = getFieldCustomizers;
-                    return [4 /*yield*/, fetchExtensions(restUrl)];
+                    return [4 /*yield*/, getExtensions(restUrl)];
                 case 1:
                     extensions = _a.apply(void 0, [_b.sent()]);
                     console.log(colors.magenta("FieldCustomizer spfx extensions on '" + program.list + "' at '" + prefs.siteUrl + "'"));
                     printToConsole(extensions);
                     return [3 /*break*/, 3];
                 case 2:
-                    error_2 = _b.sent();
-                    console.log(colors.red(error_2.message));
+                    error_3 = _b.sent();
+                    console.log(colors.red(error_3.message));
                     return [3 /*break*/, 3];
                 case 3: return [2 /*return*/];
             }

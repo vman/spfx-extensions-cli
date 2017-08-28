@@ -9,6 +9,11 @@ const Preferences = require('preferences');
 const colors = require('colors/safe');
 const pjson = require('../package.json');
 
+const prefs = new Preferences('vman.spfx.extensions.cli', {
+  siteUrl: '',
+  authHeaders: null
+});
+
 program
   .version(pjson.version)
   .option('-c, --connect <siteurl>', 'Connect to SharePoint Online at <siteurl>', null)
@@ -17,25 +22,19 @@ program
   .option('-l, --list <listtitle>', 'Show extensions at the list level for <listtitle>');
 
 program
-  .command('add <Type> <Scope> <ClientSideComponentId> [ClientSideComponentProperties]')
-  .action((Type, Scope, ClientSideComponentId, ClientSideComponentProperties) => {
-    console.log(Type, Scope, ClientSideComponentId, ClientSideComponentProperties);
-  })
+  .command('add <title> <type> <scope> <clientSideComponentId> [clientSideComponentProperties]')
+  .action(addExtension)
   .on('--help', () => {
     console.log('');
-    console.log('<Type> Type of extension (ApplicationCustomizer| CommandSet | FieldCustomizer)');
-    console.log('<Scope> Scope at which to add the extension (sitecollection | web | list)');
+    console.log('<Title> of the extension');
+    console.log('<Type> of the extension (ApplicationCustomizer | CommandSet)');
+    console.log('<Scope> Scope at which to add the extension (sitecollection | web )');
     console.log('<ClientSideComponentId> of the extension');
     console.log('[ClientSideComponentProperties] optional properties to add to the extension');
     console.log('');
   });
 
 program.parse(process.argv);
-
-const prefs = new Preferences('vman.spfx.extensions.cli', {
-  siteUrl: '',
-  authHeaders: null
-});
 
 if (program.connect) {
   prefs.siteUrl = program.connect;
@@ -63,6 +62,26 @@ if (program.list) {
   displayListExtensions();
 }
 
+async function addExtension(title: string, type: string, scope: ExtensionScope, clientSideComponentId: string, clientSideComponentProperties: string) {
+
+  try {
+    ensureAuth();
+    const userCustomActionUrl: string = `${prefs.siteUrl}/_api/${scope}/UserCustomActions`;
+
+    const requestBody: string = JSON.stringify({
+      Title: title,
+      Location: `ClientSideExtension.${type}`,
+      ClientSideComponentId: clientSideComponentId,
+      ClientSideComponentProperties: clientSideComponentProperties
+    });
+
+    console.log(await postExtension(userCustomActionUrl, requestBody));
+
+  } catch (error) {
+    console.log(colors.red(error.message));
+  }
+}
+
 async function displayExtensions(scope: ExtensionScope) {
   try {
     ensureAuth();
@@ -72,7 +91,7 @@ async function displayExtensions(scope: ExtensionScope) {
     const fieldsPath: string = (scope === ExtensionScope.Web) ? 'fields' : 'rootWeb/availablefields';
     const fieldCustomizerUrl: string = `${prefs.siteUrl}/_api/${scope}/${fieldsPath}?$select=ClientSideComponentId,Title,ClientSideComponentProperties`;
 
-    const [exts, fields] = await Promise.all([fetchExtensions(userCustomActionUrl), fetchExtensions(fieldCustomizerUrl)]);
+    const [exts, fields] = await Promise.all([getExtensions(userCustomActionUrl), getExtensions(fieldCustomizerUrl)]);
 
     const siteExtensions: IExtension[] = exts as IExtension[];
     const fieldCustomizers: IExtension[] = getFieldCustomizers(fields as IExtension[]);
@@ -105,11 +124,11 @@ function getFieldCustomizers(fields: IExtension[]) {
 
 function ensureAuth() {
   if (!prefs.siteUrl) {
-    throw new Error('Please use --connect <siteurl> to auth with SPO. Type --help for help.');
+    throw new Error('Please use spfx-ext --connect <siteurl> to auth with SPO. Type --help for help.');
   }
 }
 
-async function fetchExtensions(restUrl: string) {
+async function getExtensions(restUrl: string) {
   const response: any = await request.get({
     url: restUrl,
     headers: prefs.authHeaders
@@ -117,12 +136,31 @@ async function fetchExtensions(restUrl: string) {
   return JSON.parse(response).value;
 }
 
+async function postExtension(restUrl: string, requestBody: string) {
+  const reqDigestResponse: any = await request.post({
+    url: `${prefs.siteUrl}/_api/contextinfo`,
+    headers: prefs.authHeaders
+  });
+  const requestDigest = JSON.parse(reqDigestResponse).FormDigestValue;
+  const postHeaders = {
+    ...prefs.authHeaders,
+    'X-RequestDigest': requestDigest,
+    'content-type': 'application/json;odata=nometadata'
+  };
+  const response: any = await request.post({
+    url: restUrl,
+    body: requestBody,
+    headers: postHeaders
+  });
+  return JSON.parse(response);
+}
+
 async function displayListExtensions() {
   try {
     ensureAuth();
     const restUrl: string = `${prefs.siteUrl}/_api/web/lists/GetByTitle('${program.list}')/fields?$select=Title,ClientSideComponentId,ClientSideComponentProperties`;
 
-    const extensions: IExtension[] = getFieldCustomizers(await fetchExtensions(restUrl) as any[]);
+    const extensions: IExtension[] = getFieldCustomizers(await getExtensions(restUrl) as any[]);
 
     console.log(colors.magenta(`FieldCustomizer spfx extensions on '${program.list}' at '${prefs.siteUrl}'`));
 
