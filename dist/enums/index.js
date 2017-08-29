@@ -5,3 +5,9 @@ var ExtensionScope;
     ExtensionScope["SiteCollection"] = "site";
     ExtensionScope["Web"] = "web";
 })(ExtensionScope = exports.ExtensionScope || (exports.ExtensionScope = {}));
+var RegistrationType;
+(function (RegistrationType) {
+    RegistrationType[RegistrationType["None"] = 0] = "None";
+    RegistrationType[RegistrationType["List"] = 1] = "List";
+    RegistrationType[RegistrationType["ContentType"] = 2] = "ContentType";
+})(RegistrationType = exports.RegistrationType || (exports.RegistrationType = {}));

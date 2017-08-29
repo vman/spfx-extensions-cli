@@ -3,7 +3,7 @@ import * as program from 'Commander';
 import { getAuth, IAuthResponse } from 'node-sp-auth';
 import * as request from 'request-promise';
 import { IExtension } from './interfaces';
-import { ExtensionScope } from './enums';
+import { ExtensionScope, RegistrationType } from './enums';
 
 const Preferences = require('preferences');
 const colors = require('colors/safe');
@@ -22,14 +22,16 @@ program
   .option('-l, --list <listtitle>', 'Show extensions at the list level for <listtitle>');
 
 program
-  .command('add <title> <type> <scope> <clientSideComponentId> [clientSideComponentProperties]')
+  .command('add <title> <type> <scope> <clientSideComponentId> [registrationId] [registrationType] [clientSideComponentProperties]')
   .action(addExtension)
   .on('--help', () => {
     console.log('');
     console.log('<Title> of the extension');
-    console.log('<Type> of the extension (ApplicationCustomizer | CommandSet)');
+    console.log('<Type> of the extension (ApplicationCustomizer | ListViewCommandSet | ListViewCommandSet.CommandBar | ListViewCommandSet.ContextMenu)');
     console.log('<Scope> Scope at which to add the extension (sitecollection | web )');
     console.log('<ClientSideComponentId> of the extension');
+    console.log('[RegistrationId> of the extension');
+    console.log('[RegistrationType] of the extension (List | ContentType)');
     console.log('[ClientSideComponentProperties] optional properties to add to the extension');
     console.log('');
   });
@@ -62,17 +64,20 @@ if (program.list) {
   displayListExtensions();
 }
 
-async function addExtension(title: string, type: string, scope: ExtensionScope, clientSideComponentId: string, clientSideComponentProperties: string) {
+async function addExtension(title: string, type: string, scope: ExtensionScope, clientSideComponentId: string,
+                            registrationId: string = '', registrationType: RegistrationType = RegistrationType.None,
+                            clientSideComponentProperties: string) {
 
   try {
     ensureAuth();
     const userCustomActionUrl: string = `${prefs.siteUrl}/_api/${scope}/UserCustomActions`;
-
     const requestBody: string = JSON.stringify({
       Title: title,
       Location: `ClientSideExtension.${type}`,
       ClientSideComponentId: clientSideComponentId,
-      ClientSideComponentProperties: clientSideComponentProperties
+      ClientSideComponentProperties: clientSideComponentProperties,
+      RegistrationId: registrationId,
+      RegistrationType: RegistrationType[registrationType]
     });
 
     console.log(await postExtension(userCustomActionUrl, requestBody));
@@ -86,10 +91,10 @@ async function displayExtensions(scope: ExtensionScope) {
   try {
     ensureAuth();
 
-    const userCustomActionUrl: string = `${prefs.siteUrl}/_api/${scope}/UserCustomActions?$filter=startswith(Location, 'ClientSideExtension')&$select=ClientSideComponentId,Title,Location,ClientSideComponentProperties`;
+    const userCustomActionUrl: string = `${prefs.siteUrl}/_api/${scope}/UserCustomActions?$filter=startswith(Location, 'ClientSideExtension')&$select=Id,ClientSideComponentId,Title,Location,ClientSideComponentProperties`;
 
     const fieldsPath: string = (scope === ExtensionScope.Web) ? 'fields' : 'rootWeb/availablefields';
-    const fieldCustomizerUrl: string = `${prefs.siteUrl}/_api/${scope}/${fieldsPath}?$select=ClientSideComponentId,Title,ClientSideComponentProperties`;
+    const fieldCustomizerUrl: string = `${prefs.siteUrl}/_api/${scope}/${fieldsPath}?$select=Id,ClientSideComponentId,Title,ClientSideComponentProperties`;
 
     const [exts, fields] = await Promise.all([getExtensions(userCustomActionUrl), getExtensions(fieldCustomizerUrl)]);
 
@@ -107,9 +112,9 @@ async function displayExtensions(scope: ExtensionScope) {
 }
 
 function printToConsole(extensions: IExtension[]) {
-  console.log(colors.yellow('Title | ClientSideComponentId | Location | ClientSideComponentProperties'));
+  console.log(colors.yellow('Id | Title | ClientSideComponentId | Location | ClientSideComponentProperties'));
   for (const ext of extensions) {
-    console.log(colors.green([ext.Title, ext.ClientSideComponentId, ext.Location, ext.ClientSideComponentProperties].join(' | ')));
+    console.log(colors.green([ext.Id, ext.Title, ext.ClientSideComponentId, ext.Location, ext.ClientSideComponentProperties].join(' | ')));
   }
 }
 
@@ -136,7 +141,7 @@ async function getExtensions(restUrl: string) {
   return JSON.parse(response).value;
 }
 
-async function postExtension(restUrl: string, requestBody: string) {
+async function postExtension(restUrl: string, requestBody: string, requestMethod: string = 'POST') {
   const reqDigestResponse: any = await request.post({
     url: `${prefs.siteUrl}/_api/contextinfo`,
     headers: prefs.authHeaders
@@ -150,6 +155,7 @@ async function postExtension(restUrl: string, requestBody: string) {
   const response: any = await request.post({
     url: restUrl,
     body: requestBody,
+    method: requestMethod,
     headers: postHeaders
   });
   return JSON.parse(response);

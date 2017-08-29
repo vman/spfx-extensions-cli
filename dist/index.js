@@ -62,14 +62,16 @@ program
     .option('-s, --sitecollection', 'Show extensions at the site collection level')
     .option('-l, --list <listtitle>', 'Show extensions at the list level for <listtitle>');
 program
-    .command('add <title> <type> <scope> <clientSideComponentId> [clientSideComponentProperties]')
+    .command('add <title> <type> <scope> <clientSideComponentId> [registrationId] [registrationType] [clientSideComponentProperties]')
     .action(addExtension)
     .on('--help', function () {
     console.log('');
     console.log('<Title> of the extension');
-    console.log('<Type> of the extension (ApplicationCustomizer | CommandSet)');
+    console.log('<Type> of the extension (ApplicationCustomizer | ListViewCommandSet | ListViewCommandSet.CommandBar | ListViewCommandSet.ContextMenu)');
     console.log('<Scope> Scope at which to add the extension (sitecollection | web )');
     console.log('<ClientSideComponentId> of the extension');
+    console.log('[RegistrationId> of the extension');
+    console.log('[RegistrationType] of the extension (List | ContentType)');
     console.log('[ClientSideComponentProperties] optional properties to add to the extension');
     console.log('');
 });
@@ -95,7 +97,9 @@ if (program.sitecollection) {
 if (program.list) {
     displayListExtensions();
 }
-function addExtension(title, type, scope, clientSideComponentId, clientSideComponentProperties) {
+function addExtension(title, type, scope, clientSideComponentId, registrationId, registrationType, clientSideComponentProperties) {
+    if (registrationId === void 0) { registrationId = ''; }
+    if (registrationType === void 0) { registrationType = enums_1.RegistrationType.None; }
     return __awaiter(this, void 0, void 0, function () {
         var userCustomActionUrl, requestBody, _a, _b, error_1;
         return __generator(this, function (_c) {
@@ -108,7 +112,9 @@ function addExtension(title, type, scope, clientSideComponentId, clientSideCompo
                         Title: title,
                         Location: "ClientSideExtension." + type,
                         ClientSideComponentId: clientSideComponentId,
-                        ClientSideComponentProperties: clientSideComponentProperties
+                        ClientSideComponentProperties: clientSideComponentProperties,
+                        RegistrationId: registrationId,
+                        RegistrationType: enums_1.RegistrationType[registrationType]
                     });
                     _b = (_a = console).log;
                     return [4 /*yield*/, postExtension(userCustomActionUrl, requestBody)];
@@ -132,9 +138,9 @@ function displayExtensions(scope) {
                 case 0:
                     _b.trys.push([0, 2, , 3]);
                     ensureAuth();
-                    userCustomActionUrl = prefs.siteUrl + "/_api/" + scope + "/UserCustomActions?$filter=startswith(Location, 'ClientSideExtension')&$select=ClientSideComponentId,Title,Location,ClientSideComponentProperties";
+                    userCustomActionUrl = prefs.siteUrl + "/_api/" + scope + "/UserCustomActions?$filter=startswith(Location, 'ClientSideExtension')&$select=Id,ClientSideComponentId,Title,Location,ClientSideComponentProperties";
                     fieldsPath = (scope === enums_1.ExtensionScope.Web) ? 'fields' : 'rootWeb/availablefields';
-                    fieldCustomizerUrl = prefs.siteUrl + "/_api/" + scope + "/" + fieldsPath + "?$select=ClientSideComponentId,Title,ClientSideComponentProperties";
+                    fieldCustomizerUrl = prefs.siteUrl + "/_api/" + scope + "/" + fieldsPath + "?$select=Id,ClientSideComponentId,Title,ClientSideComponentProperties";
                     return [4 /*yield*/, Promise.all([getExtensions(userCustomActionUrl), getExtensions(fieldCustomizerUrl)])];
                 case 1:
                     _a = _b.sent(), exts = _a[0], fields = _a[1];
@@ -154,10 +160,10 @@ function displayExtensions(scope) {
     });
 }
 function printToConsole(extensions) {
-    console.log(colors.yellow('Title | ClientSideComponentId | Location | ClientSideComponentProperties'));
+    console.log(colors.yellow('Id | Title | ClientSideComponentId | Location | ClientSideComponentProperties'));
     for (var _i = 0, extensions_1 = extensions; _i < extensions_1.length; _i++) {
         var ext = extensions_1[_i];
-        console.log(colors.green([ext.Title, ext.ClientSideComponentId, ext.Location, ext.ClientSideComponentProperties].join(' | ')));
+        console.log(colors.green([ext.Id, ext.Title, ext.ClientSideComponentId, ext.Location, ext.ClientSideComponentProperties].join(' | ')));
     }
 }
 function getFieldCustomizers(fields) {
@@ -189,7 +195,8 @@ function getExtensions(restUrl) {
         });
     });
 }
-function postExtension(restUrl, requestBody) {
+function postExtension(restUrl, requestBody, requestMethod) {
+    if (requestMethod === void 0) { requestMethod = 'POST'; }
     return __awaiter(this, void 0, void 0, function () {
         var reqDigestResponse, requestDigest, postHeaders, response;
         return __generator(this, function (_a) {
@@ -205,6 +212,7 @@ function postExtension(restUrl, requestBody) {
                     return [4 /*yield*/, request.post({
                             url: restUrl,
                             body: requestBody,
+                            method: requestMethod,
                             headers: postHeaders
                         })];
                 case 2:
