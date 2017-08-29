@@ -43,8 +43,8 @@ program
   .action(removeExtension)
   .on('--help', () => {
     console.log('');
-    console.log('<id> of the extension');
     console.log('<scope> Scope from which to remove the extension (sitecollection | web )');
+    console.log('<id> of the extension');
     console.log('');
   });
 
@@ -80,7 +80,8 @@ async function removeExtension(scope: ExtensionScope, id: string) {
   try {
 
     ensureAuth();
-    const userCustomActionUrl: string = `${prefs.siteUrl}/_api/${scope}/UserCustomActions('${id}')`;
+    const path = `${scope === ExtensionScope.Web ? ExtensionScope.Web : ExtensionScope.SiteCollection}/UserCustomActions('${id}')`;
+    const userCustomActionUrl: string = `${prefs.siteUrl}/_api/${path}`;
 
     console.log(await postExtension(userCustomActionUrl, undefined, 'DELETE'));
 
@@ -162,7 +163,7 @@ function getFieldCustomizers(fields: IExtension[]) {
 
 function ensureAuth() {
   if (!prefs.siteUrl) {
-    throw new Error('Please use spfx-ext --connect <siteurl> to auth with SPO. Type --help for help.');
+    throw new Error('Please use spfx-ext --connect <siteurl> to auth with SPO. Type spfx-ext --help for help.');
   }
 }
 

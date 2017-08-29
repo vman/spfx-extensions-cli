@@ -82,8 +82,8 @@ program
     .action(removeExtension)
     .on('--help', function () {
     console.log('');
-    console.log('<id> of the extension');
     console.log('<scope> Scope from which to remove the extension (sitecollection | web )');
+    console.log('<id> of the extension');
     console.log('');
 });
 program.parse(process.argv);
@@ -110,13 +110,14 @@ if (program.list) {
 }
 function removeExtension(scope, id) {
     return __awaiter(this, void 0, void 0, function () {
-        var userCustomActionUrl, _a, _b, error_1;
+        var path, userCustomActionUrl, _a, _b, error_1;
         return __generator(this, function (_c) {
             switch (_c.label) {
                 case 0:
                     _c.trys.push([0, 2, , 3]);
                     ensureAuth();
-                    userCustomActionUrl = prefs.siteUrl + "/_api/" + scope + "/UserCustomActions('" + id + "')";
+                    path = (scope === enums_1.ExtensionScope.Web ? enums_1.ExtensionScope.Web : enums_1.ExtensionScope.SiteCollection) + "/UserCustomActions('" + id + "')";
+                    userCustomActionUrl = prefs.siteUrl + "/_api/" + path;
                     _b = (_a = console).log;
                     return [4 /*yield*/, postExtension(userCustomActionUrl, undefined, 'DELETE')];
                 case 1:
@@ -216,7 +217,7 @@ function getFieldCustomizers(fields) {
 }
 function ensureAuth() {
     if (!prefs.siteUrl) {
-        throw new Error('Please use spfx-ext --connect <siteurl> to auth with SPO. Type --help for help.');
+        throw new Error('Please use spfx-ext --connect <siteurl> to auth with SPO. Type spfx-ext --help for help.');
     }
 }
 function getExtensions(restUrl) {
