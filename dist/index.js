@@ -66,6 +66,9 @@ program
 program
     .command('add <title> <type> <scope> <clientSideComponentId> [registrationId] [registrationType] [clientSideComponentProperties]')
     .action(addExtension)
+    .option('-rid, --registrationid', 'of the extension')
+    .option('-rtype, --registrationType', 'of the extension')
+    .option('-cprops, --clientprops <listtitle>', 'properties to add to the extension')
     .on('--help', function () {
     console.log('');
     console.log('<Title> of the extension');
@@ -151,6 +154,7 @@ function displayExtensions(scope) {
                     fieldCustomizers = getFieldCustomizers(fields);
                     extensions = siteExtensions.concat(fieldCustomizers);
                     console.log(colors.magenta("'" + scope + "' level spfx extensions at '" + prefs.siteUrl + "'"));
+                    console.log('');
                     printToConsole(extensions);
                     return [3 /*break*/, 3];
                 case 2:

@@ -26,6 +26,9 @@ program
 program
   .command('add <title> <type> <scope> <clientSideComponentId> [registrationId] [registrationType] [clientSideComponentProperties]')
   .action(addExtension)
+  .option('-rid, --registrationid', 'of the extension')
+  .option('-rtype, --registrationType', 'of the extension')
+  .option('-cprops, --clientprops <listtitle>', 'properties to add to the extension')
   .on('--help', () => {
     console.log('');
     console.log('<Title> of the extension');
@@ -107,6 +110,7 @@ async function displayExtensions(scope: ExtensionScope) {
     const extensions = siteExtensions.concat(fieldCustomizers);
 
     console.log(colors.magenta(`'${scope}' level spfx extensions at '${prefs.siteUrl}'`));
+    console.log('');
     printToConsole(extensions);
 
   } catch (error) {
