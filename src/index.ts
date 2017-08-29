@@ -8,6 +8,7 @@ import { ExtensionScope, RegistrationType } from './enums';
 const Preferences = require('preferences');
 const colors = require('colors/safe');
 const pjson = require('../package.json');
+const Table = require('easy-table');
 
 const prefs = new Preferences('vman.spfx.extensions.cli', {
   siteUrl: '',
@@ -114,10 +115,16 @@ async function displayExtensions(scope: ExtensionScope) {
 }
 
 function printToConsole(extensions: IExtension[]) {
-  console.log(colors.yellow('Id | Title | ClientSideComponentId | Location | ClientSideComponentProperties'));
-  for (const ext of extensions) {
-    console.log(colors.green([ext.Id, ext.Title, ext.ClientSideComponentId, ext.Location, ext.ClientSideComponentProperties].join(' | ')));
-  }
+  const t = new Table();
+  extensions.forEach((extention: IExtension) => {
+    t.cell(colors.yellow('Id'), colors.green(extention.Id));
+    t.cell(colors.yellow('Title'), colors.green(extention.Title));
+    t.cell(colors.yellow('ClientSideComponentId'), colors.green(extention.ClientSideComponentId));
+    t.cell(colors.yellow('Location'), colors.green(extention.Location));
+    t.cell(colors.yellow('ClientSideComponentProperties'), colors.green(extention.ClientSideComponentProperties));
+    t.newRow();
+  });
+  console.log(t.toString());
 }
 
 function getFieldCustomizers(fields: IExtension[]) {

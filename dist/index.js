@@ -51,6 +51,7 @@ var enums_1 = require("./enums");
 var Preferences = require('preferences');
 var colors = require('colors/safe');
 var pjson = require('../package.json');
+var Table = require('easy-table');
 var prefs = new Preferences('vman.spfx.extensions.cli', {
     siteUrl: '',
     authHeaders: null
@@ -162,11 +163,16 @@ function displayExtensions(scope) {
     });
 }
 function printToConsole(extensions) {
-    console.log(colors.yellow('Id | Title | ClientSideComponentId | Location | ClientSideComponentProperties'));
-    for (var _i = 0, extensions_1 = extensions; _i < extensions_1.length; _i++) {
-        var ext = extensions_1[_i];
-        console.log(colors.green([ext.Id, ext.Title, ext.ClientSideComponentId, ext.Location, ext.ClientSideComponentProperties].join(' | ')));
-    }
+    var t = new Table();
+    extensions.forEach(function (extention) {
+        t.cell(colors.yellow('Id'), colors.green(extention.Id));
+        t.cell(colors.yellow('Title'), colors.green(extention.Title));
+        t.cell(colors.yellow('ClientSideComponentId'), colors.green(extention.ClientSideComponentId));
+        t.cell(colors.yellow('Location'), colors.green(extention.Location));
+        t.cell(colors.yellow('ClientSideComponentProperties'), colors.green(extention.ClientSideComponentProperties));
+        t.newRow();
+    });
+    console.log(t.toString());
 }
 function getFieldCustomizers(fields) {
     return fields
