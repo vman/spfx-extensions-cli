@@ -22,22 +22,29 @@ program
   .option('-s, --sitecollection', 'Show extensions at the site collection level')
   .option('-l, --list <listtitle>', 'Show extensions at the list level for <listtitle>');
 
-//the ones in [] need to be options
 program
-  .command('add <title> <type> <scope> <clientSideComponentId> [registrationId] [registrationType] [clientSideComponentProperties]')
+  .command('add <title> <extensionType> <scope> <clientSideComponentId>')
   .action(addExtension)
-  .option('-rid, --registrationid', 'of the extension')
-  .option('-rtype, --registrationType', 'of the extension')
-  .option('-cprops, --clientprops <listtitle>', 'properties to add to the extension')
+  .option('-rid, --registrationid', 'Only required if extention type is ListViewCommandSet')
+  .option('-rtype, --registrationType', 'Only required if extention type is ListViewCommandSet (List | ContentType)', RegistrationType.None)
+  .option('-cprops, --clientprops <json>', 'properties to add to the extension in json format')
   .on('--help', () => {
     console.log('');
-    console.log('<Title> of the extension');
-    console.log('<Type> of the extension (ApplicationCustomizer | ListViewCommandSet | ListViewCommandSet.CommandBar | ListViewCommandSet.ContextMenu)');
-    console.log('<Scope> Scope at which to add the extension (sitecollection | web )');
-    console.log('<ClientSideComponentId> of the extension');
-    console.log('[RegistrationId> of the extension');
-    console.log('[RegistrationType] of the extension (List | ContentType)');
-    console.log('[ClientSideComponentProperties] optional properties to add to the extension');
+    console.log('Required arguments:');
+    console.log('<title> of the extension');
+    console.log('<extensionType> of the extension (ApplicationCustomizer | ListViewCommandSet | ListViewCommandSet.CommandBar | ListViewCommandSet.ContextMenu)');
+    console.log('<scope> Scope at which to add the extension (sitecollection | web )');
+    console.log('<clientSideComponentId> of the extension');
+    console.log('');
+  });
+
+program
+  .command('remove <scope> <id>')
+  .action(removeExtension)
+  .on('--help', () => {
+    console.log('');
+    console.log('<id> of the extension');
+    console.log('<scope> Scope from which to remove the extension (sitecollection | web )');
     console.log('');
   });
 
@@ -53,7 +60,7 @@ if (program.connect) {
   }).then((authResponse: IAuthResponse) => {
 
     prefs.authHeaders = authResponse.headers;
-    prefs.authHeaders.Accept = 'application/json;odata=nometadata';
+    prefs.authHeaders = { ...prefs.authHeaders, Accept: 'application/json;odata=nometadata' };
   });
 }
 
@@ -69,21 +76,33 @@ if (program.list) {
   displayListExtensions();
 }
 
-//rtype and rid need to be last
-async function addExtension(title: string, type: string, scope: ExtensionScope, clientSideComponentId: string,
-                            registrationId: string = '', registrationType: RegistrationType = RegistrationType.None,
-                            clientSideComponentProperties: string) {
+async function removeExtension(scope: ExtensionScope, id: string) {
+  try {
+
+    ensureAuth();
+    const userCustomActionUrl: string = `${prefs.siteUrl}/_api/${scope}/UserCustomActions('${id}')`;
+
+    console.log(await postExtension(userCustomActionUrl, undefined, 'DELETE'));
+
+  } catch (error) {
+    console.log(colors.red(error.message));
+  }
+}
+
+async function addExtension(title: string, extensionType: string, scope: string, clientSideComponentId: string) {
 
   try {
+
     ensureAuth();
-    const userCustomActionUrl: string = `${prefs.siteUrl}/_api/${scope}/UserCustomActions`;
+    const path = `${scope === ExtensionScope.Web ? ExtensionScope.Web : ExtensionScope.SiteCollection}/UserCustomActions`;
+    const userCustomActionUrl: string = `${prefs.siteUrl}/_api/${path}`;
     const requestBody: string = JSON.stringify({
       Title: title,
-      Location: `ClientSideExtension.${type}`,
+      Location: `ClientSideExtension.${extensionType}`,
       ClientSideComponentId: clientSideComponentId,
-      ClientSideComponentProperties: clientSideComponentProperties,
-      RegistrationId: registrationId,
-      RegistrationType: RegistrationType[registrationType]
+      ClientSideComponentProperties: program.clientprops ? program.clientprops : null,
+      RegistrationId: program.registrationid ? program.registrationid : null,
+      RegistrationType: RegistrationType[program.registrationType]
     });
 
     console.log(await postExtension(userCustomActionUrl, requestBody));
@@ -109,6 +128,7 @@ async function displayExtensions(scope: ExtensionScope) {
 
     const extensions = siteExtensions.concat(fieldCustomizers);
 
+    console.log('');
     console.log(colors.magenta(`'${scope}' level spfx extensions at '${prefs.siteUrl}'`));
     console.log('');
     printToConsole(extensions);
@@ -154,24 +174,29 @@ async function getExtensions(restUrl: string) {
   return JSON.parse(response).value;
 }
 
-async function postExtension(restUrl: string, requestBody: string, requestMethod: string = 'POST') {
+async function postExtension(restUrl: string, requestBody: string = '', requestMethod: string = 'POST') {
   const reqDigestResponse: any = await request.post({
     url: `${prefs.siteUrl}/_api/contextinfo`,
     headers: prefs.authHeaders
   });
   const requestDigest = JSON.parse(reqDigestResponse).FormDigestValue;
-  const postHeaders = {
+  let postHeaders = {
     ...prefs.authHeaders,
     'X-RequestDigest': requestDigest,
     'content-type': 'application/json;odata=nometadata'
   };
+
+  if (requestMethod === 'DELETE') {
+    postHeaders = { ...postHeaders, 'X-HTTP-Method': 'DELETE' };
+  }
+
   const response: any = await request.post({
     url: restUrl,
     body: requestBody,
     method: requestMethod,
     headers: postHeaders
   });
-  return JSON.parse(response);
+  return response ? JSON.parse(response) : '';
 }
 
 async function displayListExtensions() {
