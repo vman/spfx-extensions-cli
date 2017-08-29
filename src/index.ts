@@ -34,7 +34,7 @@ program
     console.log('<title> of the extension');
     console.log('<extensionType> of the extension (ApplicationCustomizer | ListViewCommandSet | ListViewCommandSet.CommandBar | ListViewCommandSet.ContextMenu)');
     console.log('<scope> Scope at which to add the extension (sitecollection | web )');
-    console.log('<clientSideComponentId> of the extension');
+    console.log('<clientSideComponentId> from the manifest.json file of the extension');
     console.log('');
   });
 
