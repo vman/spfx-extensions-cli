@@ -61,6 +61,7 @@ program
     .option('-w, --web', 'Show extensions at the web level')
     .option('-s, --sitecollection', 'Show extensions at the site collection level')
     .option('-l, --list <listtitle>', 'Show extensions at the list level for <listtitle>');
+//the ones in [] need to be options
 program
     .command('add <title> <type> <scope> <clientSideComponentId> [registrationId] [registrationType] [clientSideComponentProperties]')
     .action(addExtension)
@@ -97,6 +98,7 @@ if (program.sitecollection) {
 if (program.list) {
     displayListExtensions();
 }
+//rtype and rid need to be last
 function addExtension(title, type, scope, clientSideComponentId, registrationId, registrationType, clientSideComponentProperties) {
     if (registrationId === void 0) { registrationId = ''; }
     if (registrationType === void 0) { registrationType = enums_1.RegistrationType.None; }

@@ -21,6 +21,7 @@ program
   .option('-s, --sitecollection', 'Show extensions at the site collection level')
   .option('-l, --list <listtitle>', 'Show extensions at the list level for <listtitle>');
 
+//the ones in [] need to be options
 program
   .command('add <title> <type> <scope> <clientSideComponentId> [registrationId] [registrationType] [clientSideComponentProperties]')
   .action(addExtension)
@@ -64,6 +65,7 @@ if (program.list) {
   displayListExtensions();
 }
 
+//rtype and rid need to be last
 async function addExtension(title: string, type: string, scope: ExtensionScope, clientSideComponentId: string,
                             registrationId: string = '', registrationType: RegistrationType = RegistrationType.None,
                             clientSideComponentProperties: string) {
