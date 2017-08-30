@@ -67,6 +67,6 @@ Examples:
 `spfx-ext remove sitecollection 92b384c7-4a78-4ad1-b6c6-a9c2d85c18b5`
 
 
->Note: Adding/Removing FieldCustomizers is not implemented through spfx-extentions-cli at this time. 
+>Note: Adding/Removing FieldCustomizers is not implemented in spfx-extentions-cli at this time. 
 
 
