@@ -4,6 +4,7 @@ var ExtensionScope;
 (function (ExtensionScope) {
     ExtensionScope["SiteCollection"] = "site";
     ExtensionScope["Web"] = "web";
+    ExtensionScope["List"] = "list";
 })(ExtensionScope = exports.ExtensionScope || (exports.ExtensionScope = {}));
 var RegistrationType;
 (function (RegistrationType) {

@@ -25,15 +25,16 @@ program
 program
   .command('add <title> <extensionType> <scope> <clientSideComponentId>')
   .action(addExtension)
-  .option('-rid, --registrationid', 'Only required if extention type is ListViewCommandSet')
-  .option('-rtype, --registrationType', 'Only required if extention type is ListViewCommandSet (List | ContentType)', RegistrationType.None)
-  .option('-cprops, --clientprops <json>', 'properties to add to the extension in json format')
+  .option('-p, --clientProps <json>', 'properties to add to the extension in json format', '')
+  .option('-l, --list <listtitle>', 'Only required if scope is list')
+  .option('-i, --registrationId <id>', 'Only required if extention type is ListViewCommandSet', null)
+  .option('-t, --registrationType <type>', 'Only required if extention type is ListViewCommandSet (List | ContentType)', RegistrationType.None)
   .on('--help', () => {
     console.log('');
     console.log('Required arguments:');
     console.log('<title> of the extension');
     console.log('<extensionType> of the extension (ApplicationCustomizer | ListViewCommandSet | ListViewCommandSet.CommandBar | ListViewCommandSet.ContextMenu)');
-    console.log('<scope> Scope at which to add the extension (sitecollection | web )');
+    console.log('<scope> Scope at which to add the extension (sitecollection | web | list)');
     console.log('<clientSideComponentId> from the manifest.json file of the extension');
     console.log('');
   });
@@ -73,7 +74,7 @@ if (program.sitecollection) {
 }
 
 if (program.list) {
-  displayListExtensions();
+  displayExtensions(ExtensionScope.List, program.list);
 }
 
 async function removeExtension(scope: ExtensionScope, id: string) {
@@ -90,20 +91,22 @@ async function removeExtension(scope: ExtensionScope, id: string) {
   }
 }
 
-async function addExtension(title: string, extensionType: string, scope: string, clientSideComponentId: string) {
+async function addExtension(title: string, extensionType: string, scope: string, clientSideComponentId: string, options: any) {
 
   try {
-
     ensureAuth();
+
     const path = `${scope === ExtensionScope.Web ? ExtensionScope.Web : ExtensionScope.SiteCollection}/UserCustomActions`;
     const userCustomActionUrl: string = `${prefs.siteUrl}/_api/${path}`;
+    const rType = options.registrationType === RegistrationType.None ? options.registrationType : RegistrationType[options.registrationType];
+
     const requestBody: string = JSON.stringify({
       Title: title,
       Location: `ClientSideExtension.${extensionType}`,
       ClientSideComponentId: clientSideComponentId,
-      ClientSideComponentProperties: program.clientprops ? program.clientprops : null,
-      RegistrationId: program.registrationid ? program.registrationid : null,
-      RegistrationType: RegistrationType[program.registrationType]
+      ClientSideComponentProperties: options.clientProps,
+      RegistrationId: options.registrationId,
+      RegistrationType: rType
     });
 
     console.log(await postExtension(userCustomActionUrl, requestBody));
@@ -113,14 +116,15 @@ async function addExtension(title: string, extensionType: string, scope: string,
   }
 }
 
-async function displayExtensions(scope: ExtensionScope) {
+async function displayExtensions(scope: ExtensionScope, listtitle?: string) {
   try {
     ensureAuth();
 
-    const userCustomActionUrl: string = `${prefs.siteUrl}/_api/${scope}/UserCustomActions?$filter=startswith(Location, 'ClientSideExtension')&$select=Id,ClientSideComponentId,Title,Location,ClientSideComponentProperties`;
+    const resourcePath: string = (scope === ExtensionScope.List) ? `web/lists/GetByTitle('${listtitle}')` : scope;
+    const userCustomActionUrl: string = `${prefs.siteUrl}/_api/${resourcePath}/UserCustomActions?$filter=startswith(Location, 'ClientSideExtension')&$select=Id,ClientSideComponentId,Title,Location,ClientSideComponentProperties`;
 
-    const fieldsPath: string = (scope === ExtensionScope.Web) ? 'fields' : 'rootWeb/availablefields';
-    const fieldCustomizerUrl: string = `${prefs.siteUrl}/_api/${scope}/${fieldsPath}?$select=Id,ClientSideComponentId,Title,ClientSideComponentProperties`;
+    const fieldsPath: string = (scope === ExtensionScope.Web || scope === ExtensionScope.List) ? 'fields' : 'rootWeb/availablefields';
+    const fieldCustomizerUrl: string = `${prefs.siteUrl}/_api/${resourcePath}/${fieldsPath}?$select=Id,ClientSideComponentId,Title,ClientSideComponentProperties`;
 
     const [exts, fields] = await Promise.all([getExtensions(userCustomActionUrl), getExtensions(fieldCustomizerUrl)]);
 
@@ -130,7 +134,7 @@ async function displayExtensions(scope: ExtensionScope) {
     const extensions = siteExtensions.concat(fieldCustomizers);
 
     console.log('');
-    console.log(colors.magenta(`'${scope}' level spfx extensions at '${prefs.siteUrl}'`));
+    console.log(colors.magenta(`'${scope}' level spfx extensions${listtitle ? ` on '${listtitle}'` : ''} at '${prefs.siteUrl}'`));
     console.log('');
     printToConsole(extensions);
 
@@ -197,21 +201,6 @@ async function postExtension(restUrl: string, requestBody: string = '', requestM
     method: requestMethod,
     headers: postHeaders
   });
+  console.log(response);
   return response ? JSON.parse(response) : '';
-}
-
-async function displayListExtensions() {
-  try {
-    ensureAuth();
-    const restUrl: string = `${prefs.siteUrl}/_api/web/lists/GetByTitle('${program.list}')/fields?$select=Title,ClientSideComponentId,ClientSideComponentProperties`;
-
-    const extensions: IExtension[] = getFieldCustomizers(await getExtensions(restUrl) as any[]);
-
-    console.log(colors.magenta(`FieldCustomizer spfx extensions on '${program.list}' at '${prefs.siteUrl}'`));
-
-    printToConsole(extensions);
-
-  } catch (error) {
-    console.log(colors.red(error.message));
-  }
 }

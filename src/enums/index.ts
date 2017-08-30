@@ -1,6 +1,7 @@
 export enum ExtensionScope {
   SiteCollection = 'site',
-  Web = 'web'
+  Web = 'web',
+  List = 'list'
 }
 
 export enum RegistrationType {

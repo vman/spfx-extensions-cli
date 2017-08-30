@@ -65,15 +65,16 @@ program
 program
     .command('add <title> <extensionType> <scope> <clientSideComponentId>')
     .action(addExtension)
-    .option('-rid, --registrationid', 'Only required if extention type is ListViewCommandSet')
-    .option('-rtype, --registrationType', 'Only required if extention type is ListViewCommandSet (List | ContentType)', enums_1.RegistrationType.None)
-    .option('-cprops, --clientprops <json>', 'properties to add to the extension in json format')
+    .option('-p, --clientProps <json>', 'properties to add to the extension in json format', '')
+    .option('-l, --list <listtitle>', 'Only required if scope is list')
+    .option('-i, --registrationId <id>', 'Only required if extention type is ListViewCommandSet', null)
+    .option('-t, --registrationType <type>', 'Only required if extention type is ListViewCommandSet (List | ContentType)', enums_1.RegistrationType.None)
     .on('--help', function () {
     console.log('');
     console.log('Required arguments:');
     console.log('<title> of the extension');
     console.log('<extensionType> of the extension (ApplicationCustomizer | ListViewCommandSet | ListViewCommandSet.CommandBar | ListViewCommandSet.ContextMenu)');
-    console.log('<scope> Scope at which to add the extension (sitecollection | web )');
+    console.log('<scope> Scope at which to add the extension (sitecollection | web | list)');
     console.log('<clientSideComponentId> from the manifest.json file of the extension');
     console.log('');
 });
@@ -106,7 +107,7 @@ if (program.sitecollection) {
     displayExtensions(enums_1.ExtensionScope.SiteCollection);
 }
 if (program.list) {
-    displayListExtensions();
+    displayExtensions(enums_1.ExtensionScope.List, program.list);
 }
 function removeExtension(scope, id) {
     return __awaiter(this, void 0, void 0, function () {
@@ -132,9 +133,9 @@ function removeExtension(scope, id) {
         });
     });
 }
-function addExtension(title, extensionType, scope, clientSideComponentId) {
+function addExtension(title, extensionType, scope, clientSideComponentId, options) {
     return __awaiter(this, void 0, void 0, function () {
-        var path, userCustomActionUrl, requestBody, _a, _b, error_2;
+        var path, userCustomActionUrl, rType, requestBody, _a, _b, error_2;
         return __generator(this, function (_c) {
             switch (_c.label) {
                 case 0:
@@ -142,13 +143,14 @@ function addExtension(title, extensionType, scope, clientSideComponentId) {
                     ensureAuth();
                     path = (scope === enums_1.ExtensionScope.Web ? enums_1.ExtensionScope.Web : enums_1.ExtensionScope.SiteCollection) + "/UserCustomActions";
                     userCustomActionUrl = prefs.siteUrl + "/_api/" + path;
+                    rType = options.registrationType === enums_1.RegistrationType.None ? options.registrationType : enums_1.RegistrationType[options.registrationType];
                     requestBody = JSON.stringify({
                         Title: title,
                         Location: "ClientSideExtension." + extensionType,
                         ClientSideComponentId: clientSideComponentId,
-                        ClientSideComponentProperties: program.clientprops ? program.clientprops : null,
-                        RegistrationId: program.registrationid ? program.registrationid : null,
-                        RegistrationType: enums_1.RegistrationType[program.registrationType]
+                        ClientSideComponentProperties: options.clientProps,
+                        RegistrationId: options.registrationId,
+                        RegistrationType: rType
                     });
                     _b = (_a = console).log;
                     return [4 /*yield*/, postExtension(userCustomActionUrl, requestBody)];
@@ -164,17 +166,18 @@ function addExtension(title, extensionType, scope, clientSideComponentId) {
         });
     });
 }
-function displayExtensions(scope) {
+function displayExtensions(scope, listtitle) {
     return __awaiter(this, void 0, void 0, function () {
-        var userCustomActionUrl, fieldsPath, fieldCustomizerUrl, _a, exts, fields, siteExtensions, fieldCustomizers, extensions, error_3;
+        var resourcePath, userCustomActionUrl, fieldsPath, fieldCustomizerUrl, _a, exts, fields, siteExtensions, fieldCustomizers, extensions, error_3;
         return __generator(this, function (_b) {
             switch (_b.label) {
                 case 0:
                     _b.trys.push([0, 2, , 3]);
                     ensureAuth();
-                    userCustomActionUrl = prefs.siteUrl + "/_api/" + scope + "/UserCustomActions?$filter=startswith(Location, 'ClientSideExtension')&$select=Id,ClientSideComponentId,Title,Location,ClientSideComponentProperties";
-                    fieldsPath = (scope === enums_1.ExtensionScope.Web) ? 'fields' : 'rootWeb/availablefields';
-                    fieldCustomizerUrl = prefs.siteUrl + "/_api/" + scope + "/" + fieldsPath + "?$select=Id,ClientSideComponentId,Title,ClientSideComponentProperties";
+                    resourcePath = (scope === enums_1.ExtensionScope.List) ? "web/lists/GetByTitle('" + listtitle + "')" : scope;
+                    userCustomActionUrl = prefs.siteUrl + "/_api/" + resourcePath + "/UserCustomActions?$filter=startswith(Location, 'ClientSideExtension')&$select=Id,ClientSideComponentId,Title,Location,ClientSideComponentProperties";
+                    fieldsPath = (scope === enums_1.ExtensionScope.Web || scope === enums_1.ExtensionScope.List) ? 'fields' : 'rootWeb/availablefields';
+                    fieldCustomizerUrl = prefs.siteUrl + "/_api/" + resourcePath + "/" + fieldsPath + "?$select=Id,ClientSideComponentId,Title,ClientSideComponentProperties";
                     return [4 /*yield*/, Promise.all([getExtensions(userCustomActionUrl), getExtensions(fieldCustomizerUrl)])];
                 case 1:
                     _a = _b.sent(), exts = _a[0], fields = _a[1];
@@ -182,7 +185,7 @@ function displayExtensions(scope) {
                     fieldCustomizers = getFieldCustomizers(fields);
                     extensions = siteExtensions.concat(fieldCustomizers);
                     console.log('');
-                    console.log(colors.magenta("'" + scope + "' level spfx extensions at '" + prefs.siteUrl + "'"));
+                    console.log(colors.magenta("'" + scope + "' level spfx extensions" + (listtitle ? " on '" + listtitle + "'" : '') + " at '" + prefs.siteUrl + "'"));
                     console.log('');
                     printToConsole(extensions);
                     return [3 /*break*/, 3];
@@ -262,32 +265,8 @@ function postExtension(restUrl, requestBody, requestMethod) {
                         })];
                 case 2:
                     response = _a.sent();
+                    console.log(response);
                     return [2 /*return*/, response ? JSON.parse(response) : ''];
-            }
-        });
-    });
-}
-function displayListExtensions() {
-    return __awaiter(this, void 0, void 0, function () {
-        var restUrl, extensions, _a, error_4;
-        return __generator(this, function (_b) {
-            switch (_b.label) {
-                case 0:
-                    _b.trys.push([0, 2, , 3]);
-                    ensureAuth();
-                    restUrl = prefs.siteUrl + "/_api/web/lists/GetByTitle('" + program.list + "')/fields?$select=Title,ClientSideComponentId,ClientSideComponentProperties";
-                    _a = getFieldCustomizers;
-                    return [4 /*yield*/, getExtensions(restUrl)];
-                case 1:
-                    extensions = _a.apply(void 0, [_b.sent()]);
-                    console.log(colors.magenta("FieldCustomizer spfx extensions on '" + program.list + "' at '" + prefs.siteUrl + "'"));
-                    printToConsole(extensions);
-                    return [3 /*break*/, 3];
-                case 2:
-                    error_4 = _b.sent();
-                    console.log(colors.red(error_4.message));
-                    return [3 /*break*/, 3];
-                case 3: return [2 /*return*/];
             }
         });
     });
