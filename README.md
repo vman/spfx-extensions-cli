@@ -36,6 +36,7 @@ CLI tool to view SharePoint Framework extensions currently installed on a Site C
 
 > Adding an extension to a site is mainly useful for tenant scoped extensions. Make sure the `.sppkg` file is uploaded/deployed in the app catalog and the extension is available to be added to a site without activating any features. After that, `spfx-ext add` can be used to add the extention to a perticular site collection or web.
 
+
 `spfx-ext add <title> <extensionType> <scope> <clientSideComponentId> --registrationid --registrationType --clientprops`
 
 
@@ -47,13 +48,15 @@ For help, type
 Examples:
 
 
-`spfx-ext add "My App Customizer" ApplicationCustomizer sitecollection f5c5285d-0141-42e5-b198-044433cd3d0c`
+`spfx-ext add "SiteCollection App Customizer" ApplicationCustomizer sitecollection f5c5285d-0141-42e5-b198-044433cd3d0c`
 
-`spfx-ext add "Another App Customizer" ApplicationCustomizer web 412b8279-2e5b-4546-a554-2f3a6ccf801a`
+`spfx-ext add "List CommandSet" ListViewCommandSet.CommandBar list 297808d9-98da-44c7-a697-0605fc4062b7 --listtitle "Documents"`
+
+`spfx-ext add "App Customizer with Props" ApplicationCustomizer web f7b1ca4a-705d-45f6-a072-3803748556a9 --clientProps "{\"Top\":\"Top area\",\"Bottom\":\"Bottom area\"}"`
 
 #### Remove an extention from the sitecollection or web:
 
-`spfx-ext remove <scope> <id>`
+`spfx-ext remove <scope> <id> --listtitle`
 
 For help, type:
 
@@ -65,6 +68,8 @@ Examples:
 `spfx-ext remove web b424419b-af2f-4748-bd76-503fe1bd567a`
 
 `spfx-ext remove sitecollection 92b384c7-4a78-4ad1-b6c6-a9c2d85c18b5`
+
+`spfx-ext remove list --listtitle "Documents" 38f4ce5c-e447-4199-9f56-fd9f96370cfd`
 
 
 >Note: Adding/Removing FieldCustomizers is not implemented in spfx-extentions-cli at this time. 

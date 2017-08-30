@@ -66,9 +66,9 @@ program
     .command('add <title> <extensionType> <scope> <clientSideComponentId>')
     .action(addExtension)
     .option('-p, --clientProps <json>', 'properties to add to the extension in json format', '')
-    .option('-l, --list <listtitle>', 'Only required if scope is list')
-    .option('-i, --registrationId <id>', 'Only required if extention type is ListViewCommandSet', null)
-    .option('-t, --registrationType <type>', 'Only required if extention type is ListViewCommandSet (List | ContentType)', enums_1.RegistrationType.None)
+    .option('-lt, --listtitle <title>', 'Only required if scope is list', null)
+    .option('-i, --registrationId <id>', 'Only required if extention type is ListViewCommandSet')
+    .option('-t, --registrationType <type>', 'Only required if extention type is ListViewCommandSet (List | ContentType)')
     .on('--help', function () {
     console.log('');
     console.log('Required arguments:');
@@ -81,6 +81,7 @@ program
 program
     .command('remove <scope> <id>')
     .action(removeExtension)
+    .option('-lt, --listtitle <title>', 'Only required if scope is list', null)
     .on('--help', function () {
     console.log('');
     console.log('<scope> Scope from which to remove the extension (sitecollection | web )');
@@ -109,66 +110,9 @@ if (program.sitecollection) {
 if (program.list) {
     displayExtensions(enums_1.ExtensionScope.List, program.list);
 }
-function removeExtension(scope, id) {
-    return __awaiter(this, void 0, void 0, function () {
-        var path, userCustomActionUrl, _a, _b, error_1;
-        return __generator(this, function (_c) {
-            switch (_c.label) {
-                case 0:
-                    _c.trys.push([0, 2, , 3]);
-                    ensureAuth();
-                    path = (scope === enums_1.ExtensionScope.Web ? enums_1.ExtensionScope.Web : enums_1.ExtensionScope.SiteCollection) + "/UserCustomActions('" + id + "')";
-                    userCustomActionUrl = prefs.siteUrl + "/_api/" + path;
-                    _b = (_a = console).log;
-                    return [4 /*yield*/, postExtension(userCustomActionUrl, undefined, 'DELETE')];
-                case 1:
-                    _b.apply(_a, [_c.sent()]);
-                    return [3 /*break*/, 3];
-                case 2:
-                    error_1 = _c.sent();
-                    console.log(colors.red(error_1.message));
-                    return [3 /*break*/, 3];
-                case 3: return [2 /*return*/];
-            }
-        });
-    });
-}
-function addExtension(title, extensionType, scope, clientSideComponentId, options) {
-    return __awaiter(this, void 0, void 0, function () {
-        var path, userCustomActionUrl, rType, requestBody, _a, _b, error_2;
-        return __generator(this, function (_c) {
-            switch (_c.label) {
-                case 0:
-                    _c.trys.push([0, 2, , 3]);
-                    ensureAuth();
-                    path = (scope === enums_1.ExtensionScope.Web ? enums_1.ExtensionScope.Web : enums_1.ExtensionScope.SiteCollection) + "/UserCustomActions";
-                    userCustomActionUrl = prefs.siteUrl + "/_api/" + path;
-                    rType = options.registrationType === enums_1.RegistrationType.None ? options.registrationType : enums_1.RegistrationType[options.registrationType];
-                    requestBody = JSON.stringify({
-                        Title: title,
-                        Location: "ClientSideExtension." + extensionType,
-                        ClientSideComponentId: clientSideComponentId,
-                        ClientSideComponentProperties: options.clientProps,
-                        RegistrationId: options.registrationId,
-                        RegistrationType: rType
-                    });
-                    _b = (_a = console).log;
-                    return [4 /*yield*/, postExtension(userCustomActionUrl, requestBody)];
-                case 1:
-                    _b.apply(_a, [_c.sent()]);
-                    return [3 /*break*/, 3];
-                case 2:
-                    error_2 = _c.sent();
-                    console.log(colors.red(error_2.message));
-                    return [3 /*break*/, 3];
-                case 3: return [2 /*return*/];
-            }
-        });
-    });
-}
 function displayExtensions(scope, listtitle) {
     return __awaiter(this, void 0, void 0, function () {
-        var resourcePath, userCustomActionUrl, fieldsPath, fieldCustomizerUrl, _a, exts, fields, siteExtensions, fieldCustomizers, extensions, error_3;
+        var resourcePath, userCustomActionUrl, fieldsPath, fieldCustomizerUrl, _a, exts, fields, siteExtensions, fieldCustomizers, extensions, error_1;
         return __generator(this, function (_b) {
             switch (_b.label) {
                 case 0:
@@ -190,7 +134,67 @@ function displayExtensions(scope, listtitle) {
                     printToConsole(extensions);
                     return [3 /*break*/, 3];
                 case 2:
-                    error_3 = _b.sent();
+                    error_1 = _b.sent();
+                    console.log(colors.red(error_1.message));
+                    return [3 /*break*/, 3];
+                case 3: return [2 /*return*/];
+            }
+        });
+    });
+}
+function addExtension(title, extensionType, scope, clientSideComponentId, options) {
+    return __awaiter(this, void 0, void 0, function () {
+        var resourcePath, userCustomActionUrl, requestBody, _a, _b, error_2;
+        return __generator(this, function (_c) {
+            switch (_c.label) {
+                case 0:
+                    _c.trys.push([0, 2, , 3]);
+                    ensureAuth();
+                    resourcePath = "" + (scope === enums_1.ExtensionScope.List ? "web/lists/GetByTitle('" + options.listtitle + "')" : scope);
+                    userCustomActionUrl = prefs.siteUrl + "/_api/" + resourcePath + "/UserCustomActions";
+                    requestBody = {
+                        Title: title,
+                        Location: "ClientSideExtension." + extensionType,
+                        ClientSideComponentId: clientSideComponentId,
+                        ClientSideComponentProperties: options.clientProps
+                    };
+                    if (options.registrationId) {
+                        requestBody.RegistrationId = options.registrationId;
+                    }
+                    if (options.RegistrationType) {
+                        requestBody.RegistrationType = enums_1.RegistrationType[options.registrationType];
+                    }
+                    _b = (_a = console).log;
+                    return [4 /*yield*/, postExtension(userCustomActionUrl, JSON.stringify(requestBody))];
+                case 1:
+                    _b.apply(_a, [_c.sent()]);
+                    return [3 /*break*/, 3];
+                case 2:
+                    error_2 = _c.sent();
+                    console.log(colors.red(error_2.message));
+                    return [3 /*break*/, 3];
+                case 3: return [2 /*return*/];
+            }
+        });
+    });
+}
+function removeExtension(scope, id, options) {
+    return __awaiter(this, void 0, void 0, function () {
+        var resourcePath, userCustomActionUrl, _a, _b, error_3;
+        return __generator(this, function (_c) {
+            switch (_c.label) {
+                case 0:
+                    _c.trys.push([0, 2, , 3]);
+                    ensureAuth();
+                    resourcePath = "" + (scope === enums_1.ExtensionScope.List ? "web/lists/GetByTitle('" + options.listtitle + "')" : scope);
+                    userCustomActionUrl = prefs.siteUrl + "/_api/" + resourcePath + "/UserCustomActions('" + id + "')";
+                    _b = (_a = console).log;
+                    return [4 /*yield*/, postExtension(userCustomActionUrl, undefined, 'DELETE')];
+                case 1:
+                    _b.apply(_a, [_c.sent()]);
+                    return [3 /*break*/, 3];
+                case 2:
+                    error_3 = _c.sent();
                     console.log(colors.red(error_3.message));
                     return [3 /*break*/, 3];
                 case 3: return [2 /*return*/];

@@ -26,9 +26,9 @@ program
   .command('add <title> <extensionType> <scope> <clientSideComponentId>')
   .action(addExtension)
   .option('-p, --clientProps <json>', 'properties to add to the extension in json format', '')
-  .option('-l, --list <listtitle>', 'Only required if scope is list')
-  .option('-i, --registrationId <id>', 'Only required if extention type is ListViewCommandSet', null)
-  .option('-t, --registrationType <type>', 'Only required if extention type is ListViewCommandSet (List | ContentType)', RegistrationType.None)
+  .option('-lt, --listtitle <title>', 'Only required if scope is list', null)
+  .option('-i, --registrationId <id>', 'Only required if extention type is ListViewCommandSet')
+  .option('-t, --registrationType <type>', 'Only required if extention type is ListViewCommandSet (List | ContentType)')
   .on('--help', () => {
     console.log('');
     console.log('Required arguments:');
@@ -42,6 +42,7 @@ program
 program
   .command('remove <scope> <id>')
   .action(removeExtension)
+  .option('-lt, --listtitle <title>', 'Only required if scope is list', null)
   .on('--help', () => {
     console.log('');
     console.log('<scope> Scope from which to remove the extension (sitecollection | web )');
@@ -77,45 +78,6 @@ if (program.list) {
   displayExtensions(ExtensionScope.List, program.list);
 }
 
-async function removeExtension(scope: ExtensionScope, id: string) {
-  try {
-
-    ensureAuth();
-    const path = `${scope === ExtensionScope.Web ? ExtensionScope.Web : ExtensionScope.SiteCollection}/UserCustomActions('${id}')`;
-    const userCustomActionUrl: string = `${prefs.siteUrl}/_api/${path}`;
-
-    console.log(await postExtension(userCustomActionUrl, undefined, 'DELETE'));
-
-  } catch (error) {
-    console.log(colors.red(error.message));
-  }
-}
-
-async function addExtension(title: string, extensionType: string, scope: string, clientSideComponentId: string, options: any) {
-
-  try {
-    ensureAuth();
-
-    const path = `${scope === ExtensionScope.Web ? ExtensionScope.Web : ExtensionScope.SiteCollection}/UserCustomActions`;
-    const userCustomActionUrl: string = `${prefs.siteUrl}/_api/${path}`;
-    const rType = options.registrationType === RegistrationType.None ? options.registrationType : RegistrationType[options.registrationType];
-
-    const requestBody: string = JSON.stringify({
-      Title: title,
-      Location: `ClientSideExtension.${extensionType}`,
-      ClientSideComponentId: clientSideComponentId,
-      ClientSideComponentProperties: options.clientProps,
-      RegistrationId: options.registrationId,
-      RegistrationType: rType
-    });
-
-    console.log(await postExtension(userCustomActionUrl, requestBody));
-
-  } catch (error) {
-    console.log(colors.red(error.message));
-  }
-}
-
 async function displayExtensions(scope: ExtensionScope, listtitle?: string) {
   try {
     ensureAuth();
@@ -137,6 +99,49 @@ async function displayExtensions(scope: ExtensionScope, listtitle?: string) {
     console.log(colors.magenta(`'${scope}' level spfx extensions${listtitle ? ` on '${listtitle}'` : ''} at '${prefs.siteUrl}'`));
     console.log('');
     printToConsole(extensions);
+
+  } catch (error) {
+    console.log(colors.red(error.message));
+  }
+}
+
+async function addExtension(title: string, extensionType: string, scope: string, clientSideComponentId: string, options: any) {
+
+  try {
+    ensureAuth();
+
+    const resourcePath = `${scope === ExtensionScope.List ? `web/lists/GetByTitle('${options.listtitle}')` : scope}`;
+    const userCustomActionUrl: string = `${prefs.siteUrl}/_api/${resourcePath}/UserCustomActions`;
+
+    const requestBody: any = {
+      Title: title,
+      Location: `ClientSideExtension.${extensionType}`,
+      ClientSideComponentId: clientSideComponentId,
+      ClientSideComponentProperties: options.clientProps
+    };
+
+    if (options.registrationId) {
+      requestBody.RegistrationId = options.registrationId;
+    }
+    if (options.RegistrationType) {
+      requestBody.RegistrationType = RegistrationType[options.registrationType];
+    }
+
+    console.log(await postExtension(userCustomActionUrl, JSON.stringify(requestBody)));
+
+  } catch (error) {
+    console.log(colors.red(error.message));
+  }
+}
+
+async function removeExtension(scope: ExtensionScope, id: string, options: any) {
+  try {
+
+    ensureAuth();
+    const resourcePath = `${scope === ExtensionScope.List ? `web/lists/GetByTitle('${options.listtitle}')` : scope}`;
+    const userCustomActionUrl: string = `${prefs.siteUrl}/_api/${resourcePath}/UserCustomActions('${id}')`;
+
+    console.log(await postExtension(userCustomActionUrl, undefined, 'DELETE'));
 
   } catch (error) {
     console.log(colors.red(error.message));
