@@ -50,9 +50,11 @@ Examples:
 
 `spfx-ext add "SiteCollection App Customizer" ApplicationCustomizer site f5c5285d-0141-42e5-b198-044433cd3d0c`
 
+`spfx-ext add "App Customizer with Props" ApplicationCustomizer web f7b1ca4a-705d-45f6-a072-3803748556a9 --clientProps "{\"Top\":\"Top area\",\"Bottom\":\"Bottom area\"}"`
+
 `spfx-ext add "List CommandSet" ListViewCommandSet.CommandBar list 297808d9-98da-44c7-a697-0605fc4062b7 --listtitle "Documents"`
 
-`spfx-ext add "App Customizer with Props" ApplicationCustomizer web f7b1ca4a-705d-45f6-a072-3803748556a9 --clientProps "{\"Top\":\"Top area\",\"Bottom\":\"Bottom area\"}"`
+`spfx-ext add "List CommandSet" ListViewCommandSet.CommandBar web f7b1ca4a-705d-45f6-a072-3803748556a9 --registrationId 100 --registrationType List`
 
 #### Remove an extention from the sitecollection or web:
 
