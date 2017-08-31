@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-import * as program from 'Commander';
+import * as program from 'commander';
 import { getAuth, IAuthResponse } from 'node-sp-auth';
 import * as request from 'request-promise';
 import { IExtension } from './interfaces';

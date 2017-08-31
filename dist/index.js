@@ -44,7 +44,7 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
     }
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-var program = require("Commander");
+var program = require("commander");
 var node_sp_auth_1 = require("node-sp-auth");
 var request = require("request-promise");
 var enums_1 = require("./enums");
