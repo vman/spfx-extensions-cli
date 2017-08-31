@@ -1,5 +1,5 @@
 export enum ExtensionScope {
-  SiteCollection = 'site',
+  Site = 'site',
   Web = 'web',
   List = 'list'
 }

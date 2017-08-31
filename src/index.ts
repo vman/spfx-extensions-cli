@@ -19,7 +19,7 @@ program
   .version(pjson.version)
   .option('-c, --connect <siteurl>', 'Connect to SharePoint Online at <siteurl>', null)
   .option('-w, --web', 'Show extensions at the web level')
-  .option('-s, --sitecollection', 'Show extensions at the site collection level')
+  .option('-s, --site', 'Show extensions at the site collection level')
   .option('-l, --list <listtitle>', 'Show extensions at the list level for <listtitle>');
 
 program
@@ -34,7 +34,7 @@ program
     console.log('Required arguments:');
     console.log('<title> of the extension');
     console.log('<extensionType> of the extension (ApplicationCustomizer | ListViewCommandSet | ListViewCommandSet.CommandBar | ListViewCommandSet.ContextMenu)');
-    console.log('<scope> Scope at which to add the extension (sitecollection | web | list)');
+    console.log('<scope> Scope at which to add the extension (site | web | list)');
     console.log('<clientSideComponentId> from the manifest.json file of the extension');
     console.log('');
   });
@@ -45,7 +45,7 @@ program
   .option('-lt, --listtitle <title>', 'Only required if scope is list', null)
   .on('--help', () => {
     console.log('');
-    console.log('<scope> Scope from which to remove the extension (sitecollection | web )');
+    console.log('<scope> Scope from which to remove the extension (site | web )');
     console.log('<id> of the extension');
     console.log('');
   });
@@ -70,8 +70,8 @@ if (program.web) {
   displayExtensions(ExtensionScope.Web);
 }
 
-if (program.sitecollection) {
-  displayExtensions(ExtensionScope.SiteCollection);
+if (program.site) {
+  displayExtensions(ExtensionScope.Site);
 }
 
 if (program.list) {

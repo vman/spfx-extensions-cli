@@ -22,7 +22,7 @@ CLI tool to view SharePoint Framework extensions currently installed on a Site C
 
 #### Get sitecollection level extensions:
 
-`spfx-ext --sitecollection`
+`spfx-ext --site`
 
 #### Get web level extensions:
 
@@ -48,7 +48,7 @@ For help, type
 Examples:
 
 
-`spfx-ext add "SiteCollection App Customizer" ApplicationCustomizer sitecollection f5c5285d-0141-42e5-b198-044433cd3d0c`
+`spfx-ext add "SiteCollection App Customizer" ApplicationCustomizer site f5c5285d-0141-42e5-b198-044433cd3d0c`
 
 `spfx-ext add "List CommandSet" ListViewCommandSet.CommandBar list 297808d9-98da-44c7-a697-0605fc4062b7 --listtitle "Documents"`
 
@@ -67,7 +67,7 @@ Examples:
 
 `spfx-ext remove web b424419b-af2f-4748-bd76-503fe1bd567a`
 
-`spfx-ext remove sitecollection 92b384c7-4a78-4ad1-b6c6-a9c2d85c18b5`
+`spfx-ext remove site 92b384c7-4a78-4ad1-b6c6-a9c2d85c18b5`
 
 `spfx-ext remove list --listtitle "Documents" 38f4ce5c-e447-4199-9f56-fd9f96370cfd`
 

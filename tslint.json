@@ -28,7 +28,7 @@
     ],
     "no-var-requires": false,
     "no-empty-interface": false,
-    "eofline": false,
+    "eofline": true,
     "one-line": [
       false
     ],

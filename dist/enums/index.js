@@ -2,7 +2,7 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 var ExtensionScope;
 (function (ExtensionScope) {
-    ExtensionScope["SiteCollection"] = "site";
+    ExtensionScope["Site"] = "site";
     ExtensionScope["Web"] = "web";
     ExtensionScope["List"] = "list";
 })(ExtensionScope = exports.ExtensionScope || (exports.ExtensionScope = {}));
