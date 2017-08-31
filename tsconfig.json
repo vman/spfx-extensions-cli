@@ -16,6 +16,7 @@
 		"noImplicitReturns": true, /* Report error when not all code paths in function return a value. */
 		"noFallthroughCasesInSwitch": true,
 		"strictNullChecks": true,
+		"newLine": "LF",
 		"lib": [
 			"es2015",
 			"dom"

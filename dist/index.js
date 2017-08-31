@@ -1,5 +1,13 @@
 #!/usr/bin/env node
 "use strict";
+var __assign = (this && this.__assign) || Object.assign || function(t) {
+    for (var s, i = 1, n = arguments.length; i < n; i++) {
+        s = arguments[i];
+        for (var p in s) if (Object.prototype.hasOwnProperty.call(s, p))
+            t[p] = s[p];
+    }
+    return t;
+};
 var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
     return new (P || (P = Promise))(function (resolve, reject) {
         function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
@@ -43,17 +51,44 @@ var enums_1 = require("./enums");
 var Preferences = require('preferences');
 var colors = require('colors/safe');
 var pjson = require('../package.json');
-program
-    .version(pjson.version)
-    .option('-c, --connect <siteurl>', 'Connect to SharePoint Online at <siteurl>', null)
-    .option('-w, --web', 'Show extensions at the web level')
-    .option('-s, --sitecollection', 'Show extensions at the site collection level')
-    .option('-l, --list <listtitle>', 'Show extensions at the list level for <listtitle>')
-    .parse(process.argv);
+var Table = require('easy-table');
 var prefs = new Preferences('vman.spfx.extensions.cli', {
     siteUrl: '',
     authHeaders: null
 });
+program
+    .version(pjson.version)
+    .option('-c, --connect <siteurl>', 'Connect to SharePoint Online at <siteurl>', null)
+    .option('-w, --web', 'Show extensions at the web level')
+    .option('-s, --site', 'Show extensions at the site collection level')
+    .option('-l, --list <listtitle>', 'Show extensions at the list level for <listtitle>');
+program
+    .command('add <title> <extensionType> <scope> <clientSideComponentId>')
+    .action(addExtension)
+    .option('-p, --clientProps <json>', 'properties to add to the extension in json format', '')
+    .option('-lt, --listtitle <title>', 'Only required if scope is list', null)
+    .option('-i, --registrationId <id>', 'Only required if extention type is ListViewCommandSet')
+    .option('-t, --registrationType <type>', 'Only required if extention type is ListViewCommandSet (List | ContentType)')
+    .on('--help', function () {
+    console.log('');
+    console.log('Required arguments:');
+    console.log('<title> of the extension');
+    console.log('<extensionType> of the extension (ApplicationCustomizer | ListViewCommandSet | ListViewCommandSet.CommandBar | ListViewCommandSet.ContextMenu)');
+    console.log('<scope> Scope at which to add the extension (site | web | list)');
+    console.log('<clientSideComponentId> from the manifest.json file of the extension');
+    console.log('');
+});
+program
+    .command('remove <scope> <id>')
+    .action(removeExtension)
+    .option('-lt, --listtitle <title>', 'Only required if scope is list', null)
+    .on('--help', function () {
+    console.log('');
+    console.log('<scope> Scope from which to remove the extension (site | web )');
+    console.log('<id> of the extension');
+    console.log('');
+});
+program.parse(process.argv);
 if (program.connect) {
     prefs.siteUrl = program.connect;
     node_sp_auth_1.getAuth(prefs.siteUrl, {
@@ -63,36 +98,39 @@ if (program.connect) {
         persist: true
     }).then(function (authResponse) {
         prefs.authHeaders = authResponse.headers;
-        prefs.authHeaders.Accept = 'application/json;odata=nometadata';
+        prefs.authHeaders = __assign({}, prefs.authHeaders, { Accept: 'application/json;odata=nometadata' });
     });
 }
 if (program.web) {
     displayExtensions(enums_1.ExtensionScope.Web);
 }
-if (program.sitecollection) {
-    displayExtensions(enums_1.ExtensionScope.SiteCollection);
+if (program.site) {
+    displayExtensions(enums_1.ExtensionScope.Site);
 }
 if (program.list) {
-    displayListExtensions();
+    displayExtensions(enums_1.ExtensionScope.List, program.list);
 }
-function displayExtensions(scope) {
+function displayExtensions(scope, listtitle) {
     return __awaiter(this, void 0, void 0, function () {
-        var userCustomActionUrl, fieldsPath, fieldCustomizerUrl, _a, exts, fields, siteExtensions, fieldCustomizers, extensions, error_1;
+        var resourcePath, userCustomActionUrl, fieldsPath, fieldCustomizerUrl, _a, exts, fields, siteExtensions, fieldCustomizers, extensions, error_1;
         return __generator(this, function (_b) {
             switch (_b.label) {
                 case 0:
                     _b.trys.push([0, 2, , 3]);
                     ensureAuth();
-                    userCustomActionUrl = prefs.siteUrl + "/_api/" + scope + "/UserCustomActions?$filter=startswith(Location, 'ClientSideExtension')&$select=ClientSideComponentId,Title,Location,ClientSideComponentProperties";
-                    fieldsPath = (scope === enums_1.ExtensionScope.Web) ? 'fields' : 'rootWeb/availablefields';
-                    fieldCustomizerUrl = prefs.siteUrl + "/_api/" + scope + "/" + fieldsPath + "?$select=ClientSideComponentId,Title,ClientSideComponentProperties";
-                    return [4 /*yield*/, Promise.all([fetchExtensions(userCustomActionUrl), fetchExtensions(fieldCustomizerUrl)])];
+                    resourcePath = (scope === enums_1.ExtensionScope.List) ? "web/lists/GetByTitle('" + listtitle + "')" : scope;
+                    userCustomActionUrl = prefs.siteUrl + "/_api/" + resourcePath + "/UserCustomActions?$filter=startswith(Location, 'ClientSideExtension')&$select=Id,ClientSideComponentId,Title,Location,ClientSideComponentProperties";
+                    fieldsPath = (scope === enums_1.ExtensionScope.Web || scope === enums_1.ExtensionScope.List) ? 'fields' : 'rootWeb/availablefields';
+                    fieldCustomizerUrl = prefs.siteUrl + "/_api/" + resourcePath + "/" + fieldsPath + "?$select=Id,ClientSideComponentId,Title,ClientSideComponentProperties";
+                    return [4 /*yield*/, Promise.all([getExtensions(userCustomActionUrl), getExtensions(fieldCustomizerUrl)])];
                 case 1:
                     _a = _b.sent(), exts = _a[0], fields = _a[1];
                     siteExtensions = exts;
                     fieldCustomizers = getFieldCustomizers(fields);
                     extensions = siteExtensions.concat(fieldCustomizers);
-                    console.log(colors.magenta("'" + scope + "' level spfx extensions at '" + prefs.siteUrl + "'"));
+                    console.log('');
+                    console.log(colors.magenta("'" + scope + "' level spfx extensions" + (listtitle ? " on '" + listtitle + "'" : '') + " at '" + prefs.siteUrl + "'"));
+                    console.log('');
                     printToConsole(extensions);
                     return [3 /*break*/, 3];
                 case 2:
@@ -104,12 +142,77 @@ function displayExtensions(scope) {
         });
     });
 }
+function addExtension(title, extensionType, scope, clientSideComponentId, options) {
+    return __awaiter(this, void 0, void 0, function () {
+        var resourcePath, userCustomActionUrl, requestBody, _a, _b, error_2;
+        return __generator(this, function (_c) {
+            switch (_c.label) {
+                case 0:
+                    _c.trys.push([0, 2, , 3]);
+                    ensureAuth();
+                    resourcePath = "" + (scope === enums_1.ExtensionScope.List ? "web/lists/GetByTitle('" + options.listtitle + "')" : scope);
+                    userCustomActionUrl = prefs.siteUrl + "/_api/" + resourcePath + "/UserCustomActions";
+                    requestBody = {
+                        Title: title,
+                        Location: "ClientSideExtension." + extensionType,
+                        ClientSideComponentId: clientSideComponentId,
+                        ClientSideComponentProperties: options.clientProps
+                    };
+                    if (options.registrationId) {
+                        requestBody.RegistrationId = options.registrationId;
+                    }
+                    if (options.RegistrationType) {
+                        requestBody.RegistrationType = enums_1.RegistrationType[options.registrationType];
+                    }
+                    _b = (_a = console).log;
+                    return [4 /*yield*/, postExtension(userCustomActionUrl, JSON.stringify(requestBody))];
+                case 1:
+                    _b.apply(_a, [_c.sent()]);
+                    return [3 /*break*/, 3];
+                case 2:
+                    error_2 = _c.sent();
+                    console.log(colors.red(error_2.message));
+                    return [3 /*break*/, 3];
+                case 3: return [2 /*return*/];
+            }
+        });
+    });
+}
+function removeExtension(scope, id, options) {
+    return __awaiter(this, void 0, void 0, function () {
+        var resourcePath, userCustomActionUrl, _a, _b, error_3;
+        return __generator(this, function (_c) {
+            switch (_c.label) {
+                case 0:
+                    _c.trys.push([0, 2, , 3]);
+                    ensureAuth();
+                    resourcePath = "" + (scope === enums_1.ExtensionScope.List ? "web/lists/GetByTitle('" + options.listtitle + "')" : scope);
+                    userCustomActionUrl = prefs.siteUrl + "/_api/" + resourcePath + "/UserCustomActions('" + id + "')";
+                    _b = (_a = console).log;
+                    return [4 /*yield*/, postExtension(userCustomActionUrl, undefined, 'DELETE')];
+                case 1:
+                    _b.apply(_a, [_c.sent()]);
+                    return [3 /*break*/, 3];
+                case 2:
+                    error_3 = _c.sent();
+                    console.log(colors.red(error_3.message));
+                    return [3 /*break*/, 3];
+                case 3: return [2 /*return*/];
+            }
+        });
+    });
+}
 function printToConsole(extensions) {
-    console.log(colors.yellow('Title | ClientSideComponentId | Location | ClientSideComponentProperties'));
-    for (var _i = 0, extensions_1 = extensions; _i < extensions_1.length; _i++) {
-        var ext = extensions_1[_i];
-        console.log(colors.green([ext.Title, ext.ClientSideComponentId, ext.Location, ext.ClientSideComponentProperties].join(' | ')));
-    }
+    var t = new Table();
+    extensions.forEach(function (extention) {
+        t.cell(colors.yellow('Id'), colors.green(extention.Id));
+        t.cell(colors.yellow('Title'), colors.green(extention.Title));
+        t.cell(colors.yellow('ClientSideComponentId'), colors.green(extention.ClientSideComponentId));
+        t.cell(colors.yellow('Location'), colors.green(extention.Location));
+        t.cell(colors.yellow('ClientSideComponentProperties'), colors.green(extention.ClientSideComponentProperties));
+        t.newRow();
+    });
+    console.log(t.toString());
 }
 function getFieldCustomizers(fields) {
     return fields
@@ -121,10 +224,10 @@ function getFieldCustomizers(fields) {
 }
 function ensureAuth() {
     if (!prefs.siteUrl) {
-        throw new Error('Please use --connect <siteurl> to auth with SPO. Type --help for help.');
+        throw new Error('Please use spfx-ext --connect <siteurl> to auth with SPO. Type spfx-ext --help for help.');
     }
 }
-function fetchExtensions(restUrl) {
+function getExtensions(restUrl) {
     return __awaiter(this, void 0, void 0, function () {
         var response;
         return __generator(this, function (_a) {
@@ -140,27 +243,34 @@ function fetchExtensions(restUrl) {
         });
     });
 }
-function displayListExtensions() {
+function postExtension(restUrl, requestBody, requestMethod) {
+    if (requestBody === void 0) { requestBody = ''; }
+    if (requestMethod === void 0) { requestMethod = 'POST'; }
     return __awaiter(this, void 0, void 0, function () {
-        var restUrl, extensions, _a, error_2;
-        return __generator(this, function (_b) {
-            switch (_b.label) {
-                case 0:
-                    _b.trys.push([0, 2, , 3]);
-                    ensureAuth();
-                    restUrl = prefs.siteUrl + "/_api/web/lists/GetByTitle('" + program.list + "')/fields?$select=Title,ClientSideComponentId,ClientSideComponentProperties";
-                    _a = getFieldCustomizers;
-                    return [4 /*yield*/, fetchExtensions(restUrl)];
+        var reqDigestResponse, requestDigest, postHeaders, response;
+        return __generator(this, function (_a) {
+            switch (_a.label) {
+                case 0: return [4 /*yield*/, request.post({
+                        url: prefs.siteUrl + "/_api/contextinfo",
+                        headers: prefs.authHeaders
+                    })];
                 case 1:
-                    extensions = _a.apply(void 0, [_b.sent()]);
-                    console.log(colors.magenta("FieldCustomizer spfx extensions on '" + program.list + "' at '" + prefs.siteUrl + "'"));
-                    printToConsole(extensions);
-                    return [3 /*break*/, 3];
+                    reqDigestResponse = _a.sent();
+                    requestDigest = JSON.parse(reqDigestResponse).FormDigestValue;
+                    postHeaders = __assign({}, prefs.authHeaders, { 'X-RequestDigest': requestDigest, 'content-type': 'application/json;odata=nometadata' });
+                    if (requestMethod === 'DELETE') {
+                        postHeaders = __assign({}, postHeaders, { 'X-HTTP-Method': 'DELETE' });
+                    }
+                    return [4 /*yield*/, request.post({
+                            url: restUrl,
+                            body: requestBody,
+                            method: requestMethod,
+                            headers: postHeaders
+                        })];
                 case 2:
-                    error_2 = _b.sent();
-                    console.log(colors.red(error_2.message));
-                    return [3 /*break*/, 3];
-                case 3: return [2 /*return*/];
+                    response = _a.sent();
+                    console.log(response);
+                    return [2 /*return*/, response ? JSON.parse(response) : ''];
             }
         });
     });
