@@ -27,8 +27,8 @@ program
   .action(addExtension)
   .option('-p, --clientProps <json>', 'properties to add to the extension in json format', '')
   .option('-lt, --listtitle <title>', 'Only required if scope is list', null)
-  .option('-i, --registrationId <id>', 'Only required if extention type is ListViewCommandSet')
-  .option('-t, --registrationType <type>', 'Only required if extention type is ListViewCommandSet (List | ContentType)')
+  .option('-i, --registrationId <id>', 'Only required if extension type is ListViewCommandSet')
+  .option('-t, --registrationType <type>', 'Only required if extension type is ListViewCommandSet (List | ContentType)')
   .on('--help', () => {
     console.log('');
     console.log('Required arguments:');
@@ -45,7 +45,7 @@ program
   .option('-lt, --listtitle <title>', 'Only required if scope is list', null)
   .on('--help', () => {
     console.log('');
-    console.log('<scope> Scope from which to remove the extension (site | web )');
+    console.log('<scope> Scope from which to remove the extension (site | web | list )');
     console.log('<id> of the extension');
     console.log('');
   });
@@ -150,12 +150,12 @@ async function removeExtension(scope: ExtensionScope, id: string, options: any) 
 
 function printToConsole(extensions: IExtension[]) {
   const t = new Table();
-  extensions.forEach((extention: IExtension) => {
-    t.cell(colors.yellow('Id'), colors.green(extention.Id));
-    t.cell(colors.yellow('Title'), colors.green(extention.Title));
-    t.cell(colors.yellow('ClientSideComponentId'), colors.green(extention.ClientSideComponentId));
-    t.cell(colors.yellow('Location'), colors.green(extention.Location));
-    t.cell(colors.yellow('ClientSideComponentProperties'), colors.green(extention.ClientSideComponentProperties));
+  extensions.forEach((extension: IExtension) => {
+    t.cell(colors.yellow('Id'), colors.green(extension.Id));
+    t.cell(colors.yellow('Title'), colors.green(extension.Title));
+    t.cell(colors.yellow('ClientSideComponentId'), colors.green(extension.ClientSideComponentId));
+    t.cell(colors.yellow('Location'), colors.green(extension.Location));
+    t.cell(colors.yellow('ClientSideComponentProperties'), colors.green(extension.ClientSideComponentProperties));
     t.newRow();
   });
   console.log(t.toString());
