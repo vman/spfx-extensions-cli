@@ -32,7 +32,7 @@ CLI tool to view SharePoint Framework extensions currently installed on a Site C
 
 `spfx-ext --list "My List"`
 
-#### Add an extension to a sitecollection or web:
+#### Add an extension:
 
 > Adding an extension to a site is mainly useful for tenant scoped extensions. Make sure the `.sppkg` file is uploaded/deployed in the app catalog and the extension is available to be added to a site without activating any features. After that, `spfx-ext add` can be used to add the extension to a perticular site collection, web or list.
 
@@ -56,7 +56,7 @@ Examples:
 
 `spfx-ext add "List CommandSet" ListViewCommandSet.CommandBar web 297808d9-98da-44c7-a697-0605fc4062b7 --registrationId 100 --registrationType List`
 
-#### Remove an extension from the sitecollection or web:
+#### Remove an extension:
 
 `spfx-ext remove <scope> <id> --listtitle`
 
