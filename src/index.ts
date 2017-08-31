@@ -45,7 +45,7 @@ program
   .option('-lt, --listtitle <title>', 'Only required if scope is list', null)
   .on('--help', () => {
     console.log('');
-    console.log('<scope> Scope from which to remove the extension (site | web )');
+    console.log('<scope> Scope from which to remove the extension (site | web | list )');
     console.log('<id> of the extension');
     console.log('');
   });
