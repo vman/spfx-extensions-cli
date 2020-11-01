@@ -1,5 +1,13 @@
 # spfx-extensions-cli
 
+> :warning: I am no longer actively working on this tool mainly because the Microsoft 365 CLI (formerly Office 365 CLI) is a better cross platform alternative to manage the SPFx extensions among many other things.
+
+> Here is a blogpost which might help you: https://sharepoint.handsontek.net/2018/02/11/mange-spfx-extensions-from-macos-with-office-365-cli/
+
+> and the customaction docs for the M365 CLI: https://pnp.github.io/cli-microsoft365/cmd/spo/customaction/customaction-add/
+
+---
+
 [![NPM](https://nodei.co/npm/spfx-extensions-cli.png?compact=true)](https://nodei.co/npm/spfx-extensions-cli/)
 
 CLI tool to manage SharePoint Framework extensions currently installed on a Site Collection, Site or a List.
